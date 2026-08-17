@@ -1,43 +1,31 @@
-'use strict';
+const sequelize = require('../config/database');
+const User = require('./User');
+const Author = require('./Author');
+const Book = require('./Book');
+const Review = require('./Review');
+const SaleByYear = require('./SaleByYear');
 
-const fs = require('fs');
-const path = require('path');
-const Sequelize = require('sequelize');
-const process = require('process');
-const basename = path.basename(__filename);
-const env = process.env.NODE_ENV || 'development';
-const config = require(__dirname + '/../config/config.json')[env];
-const db = {};
+// Author <-> Book
+Author.hasMany(Book, { foreignKey: 'author_id', onDelete: 'CASCADE' });
+Book.belongsTo(Author, { foreignKey: 'author_id' });
 
-let sequelize;
-if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
-} else {
-  sequelize = new Sequelize(config.database, config.username, config.password, config);
-}
+// Book <-> Review
+Book.hasMany(Review, { foreignKey: 'book_id', onDelete: 'CASCADE' });
+Review.belongsTo(Book, { foreignKey: 'book_id' });
 
-fs
-  .readdirSync(__dirname)
-  .filter(file => {
-    return (
-      file.indexOf('.') !== 0 &&
-      file !== basename &&
-      file.slice(-3) === '.js' &&
-      file.indexOf('.test.js') === -1
-    );
-  })
-  .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
-    db[model.name] = model;
-  });
+// User <-> Review
+User.hasMany(Review, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+Review.belongsTo(User, { foreignKey: 'user_id' });
 
-Object.keys(db).forEach(modelName => {
-  if (db[modelName].associate) {
-    db[modelName].associate(db);
-  }
-});
+// Book <-> SaleByYear
+Book.hasMany(SaleByYear, { foreignKey: 'book_id', onDelete: 'CASCADE' });
+SaleByYear.belongsTo(Book, { foreignKey: 'book_id' });
 
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
-
-module.exports = db;
+module.exports = {
+  sequelize,
+  User,
+  Author,
+  Book,
+  Review,
+  SaleByYear
+};

@@ -1,49 +1,44 @@
 const express = require('express');
-const { Sequelize, DataTypes } = require('sequelize');
+const path = require('path');
+const { sequelize, Author } = require('./models');
+const { authenticate } = require('./middleware/auth');
+const seedDatabase = require('./seed');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// 1. Configurar Sequelize
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: './data/database.sqlite', // Guardado en la carpeta /data
-  logging: false // Cambia a true para ver las consultas SQL en consola
-});
+// Global Auth Header Middleware
+app.use(authenticate);
 
-// 2. Definir un Modelo (Equivalente a una tabla)
-const User = sequelize.define('User', {
-  nombre: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  email: {
-    type: DataTypes.STRING,
-    unique: true
-  }
-});
+// Mount Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/authors', require('./routes/authors'));
+app.use('/api/books', require('./routes/books'));
+app.use('/api/reviews', require('./routes/reviews'));
+app.use('/api/sales', require('./routes/sales'));
+app.use('/api/users', require('./routes/users'));
 
-// 3. Rutas de la API
-app.get('/users', async (req, res) => {
-  const users = await User.findAll();
-  res.json(users);
-});
-
-app.post('/users', async (req, res) => {
+async function startServer() {
   try {
-    const user = await User.create(req.body);
-    res.status(201).json(user);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
+    await sequelize.authenticate();
+    await sequelize.sync({ alter: true });
 
-// 4. Sincronizar ORM e iniciar servidor
-sequelize.sync().then(() => {
-  console.log('Base de datos sincronizada.');
-  app.listen(port, () => {
-    console.log(`Servidor corriendo en http://localhost:${port}`);
-  });
-});
+    const authorCount = await Author.count();
+    if (authorCount === 0) {
+      console.log('Database empty. Running seed with encrypted admin/users...');
+      await seedDatabase();
+    }
+
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running at http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Server startup error:', error);
+  }
+}
+
+startServer();
