@@ -2,281 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Book Review Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Library Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: sans-serif; margin: 2rem; background: #f4f6f8; color: #333; }
-    .header { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 1rem 1.5rem; border: 1px solid #ddd; border-radius: 4px; }
-    .tabs { margin-top: 1.5rem; }
-    .tabs button { padding: 8px 16px; cursor: pointer; margin-right: 5px; border: 1px solid #ccc; background: #fff; }
-    .tabs button.active { background: #007bff; color: #fff; font-weight: bold; border-color: #007bff; }
-    .card { background: #fff; padding: 1.5rem; border: 1px solid #ddd; margin-top: 1rem; border-radius: 4px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background: #f0f0f0; }
-    input, textarea, select { margin-bottom: 8px; padding: 6px; width: 100%; box-sizing: border-box; }
-    .btn { padding: 6px 12px; cursor: pointer; border: none; border-radius: 3px; }
-    .btn-primary { background: #007bff; color: #fff; }
-    .btn-edit { background: #ffc107; color: #000; margin-right: 4px; }
-    .btn-danger { background: #dc3545; color: #fff; }
-    .auth-box { display: flex; gap: 8px; align-items: center; }
-    .auth-box input { width: auto; margin-bottom: 0; }
+    
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .nav-link.active { font-weight: 600; border-bottom: 2px solid #1e293b; color: #1e293b; }
   </style>
 </head>
-<body>
+<body class="bg-gray-50 text-slate-800 min-h-screen flex flex-col">
 
-  <!-- Top Auth Header -->
-  <div class="header">
-    <h2>Book Review Application</h2>
-    <div id="auth-section" class="auth-box">
-      <input type="text" id="login-username" placeholder="Username (admin or user_1)" />
-      <input type="password" id="login-password" placeholder="Password (adminpassword123 / password123)" />
-      <button class="btn btn-primary" onclick="login()">Login</button>
-    </div>
-  </div>
-
-  <!-- Resource Navigation -->
-  <div class="tabs">
-    <button id="tab-authors" class="active" onclick="switchTab('authors')">Authors</button>
-    <button id="tab-books" onclick="switchTab('books')">Books</button>
-    <button id="tab-reviews" onclick="switchTab('reviews')">Reviews</button>
-    <button id="tab-sales" onclick="switchTab('sales')">Sales by Year</button>
-    <button id="tab-users" style="display:none;" onclick="switchTab('users')">Users (Admin Only)</button>
-  </div>
-
-  <!-- Main View Card -->
-  <div class="card">
-    <h3 id="view-title">AUTHORS</h3>
-    
-    <div id="form-wrapper" style="display:none; border: 1px dashed #ccc; padding: 1rem; margin-bottom: 1rem;">
-      <h4 id="form-heading">Create Record</h4>
-      <div id="dynamic-inputs"></div>
-      <button class="btn btn-primary" id="save-btn" onclick="saveRecord()">Save</button>
-      <button class="btn" onclick="cancelEdit()">Cancel</button>
-    </div>
-
-    <div id="login-prompt" style="color: #666; margin-bottom: 1rem;">
-      <em>Log in to create, edit, or delete records.</em>
-    </div>
-
-    <table>
-      <thead><tr id="table-head"></tr></thead>
-      <tbody id="table-body"></tbody>
-    </table>
-  </div>
-
-  <script>
-    let currentUser = null;
-    let currentResource = 'authors';
-    let editRecordId = null;
-
-    const schemas = {
-      authors: ['name', 'birth_date', 'country', 'description'],
-      books: ['name', 'summary', 'date_of_publish', 'author_id'],
-      reviews: ['review', 'score', 'number_of_votes', 'book_id'],
-      sales: ['year', 'sales', 'book_id'],
-      users: ['first_name', 'last_name', 'username', 'email', 'password', 'role']
-    };
-
-    async function login() {
-      const username = document.getElementById('login-username').value;
-      const password = document.getElementById('login-password').value;
+  
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex justify-between items-center">
+      <div class="flex items-baseline gap-8">
+        <h1 class="text-xl font-semibold tracking-tight text-slate-900">Library</h1>
+        <nav class="hidden sm:flex gap-6" id="main-nav">
+          <a href="#/authors" class="nav-link pb-1 text-sm text-slate-500 hover:text-slate-900 transition-colors active">Authors</a>
+          <a href="#/books" class="nav-link pb-1 text-sm text-slate-500 hover:text-slate-900 transition-colors">Books</a>
+        </nav>
+      </div>
       
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-
-      if (res.ok) {
-        currentUser = await res.json();
-        renderAuthHeader();
-        switchTab(currentResource);
-      } else {
-        const err = await res.json();
-        alert(err.error);
-      }
-    }
-
-    function logout() {
-      currentUser = null;
-      renderAuthHeader();
-      switchTab('authors');
-    }
-
-    function renderAuthHeader() {
-      const container = document.getElementById('auth-section');
-      const usersTab = document.getElementById('tab-users');
-      const formWrapper = document.getElementById('form-wrapper');
-      const loginPrompt = document.getElementById('login-prompt');
-
-      if (currentUser) {
-        container.innerHTML = `
-          <span>Logged in as: <strong>${currentUser.username}</strong> (${currentUser.role})</span>
-          <button class="btn btn-danger" onclick="logout()">Logout</button>
-        `;
-        usersTab.style.display = currentUser.role === 'admin' ? 'inline-block' : 'none';
-        formWrapper.style.display = (currentResource !== 'users' || currentUser.role === 'admin') ? 'block' : 'none';
-        loginPrompt.style.display = 'none';
-      } else {
-        container.innerHTML = `
-          <input type="text" id="login-username" placeholder="Username" />
-          <input type="password" id="login-password" placeholder="Password" />
-          <button class="btn btn-primary" onclick="login()">Login</button>
-        `;
-        usersTab.style.display = 'none';
-        formWrapper.style.display = 'none';
-        loginPrompt.style.display = 'block';
-      }
-    }
-
-    function switchTab(resource) {
-      if (resource === 'users' && (!currentUser || currentUser.role !== 'admin')) {
-        alert('Access denied: Admins only');
-        return;
-      }
-      currentResource = resource;
-      editRecordId = null;
-
-      document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
-      const activeBtn = document.getElementById(`tab-${resource}`);
-      if (activeBtn) activeBtn.classList.add('active');
-
-      document.getElementById('view-title').innerText = resource.toUpperCase();
-      renderForm();
-      renderAuthHeader();
-      fetchRecords();
-    }
-
-    function renderForm(data = {}) {
-      const container = document.getElementById('dynamic-inputs');
-      container.innerHTML = '';
-      document.getElementById('form-heading').innerText = editRecordId ? `Edit Record #${editRecordId}` : 'Create Record';
       
-      schemas[currentResource].forEach(field => {
-        const input = document.createElement('input');
-        input.id = `input-${field}`;
-        input.placeholder = field.replace('_', ' ');
-        input.value = data[field] || '';
+      <div id="auth-section" class="flex items-center gap-3 text-sm"></div>
+    </div>
+  </header>
 
-        if (field.includes('date')) input.type = 'date';
-        if (['score', 'number_of_votes', 'sales', 'year', 'author_id', 'book_id'].includes(field)) input.type = 'number';
-        if (field === 'password' && editRecordId) input.placeholder = 'Password (leave blank to keep current)';
-        container.appendChild(input);
-      });
-    }
+  
+  <main class="flex-grow max-w-5xl mx-auto w-full px-4 sm:px-6 py-8">
+    <div id="app-root" class="bg-white rounded-md border border-gray-200 shadow-sm p-6 sm:p-8 min-h-[50vh]">
+      
+    </div>
+  </main>
 
-    function getAuthHeaders() {
-      const headers = { 'Content-Type': 'application/json' };
-      if (currentUser) headers['x-user-id'] = currentUser.id;
-      return headers;
-    }
-
-    async function fetchRecords() {
-      const res = await fetch(`/api/${currentResource}`, { headers: getAuthHeaders() });
-      if (!res.ok) {
-        document.getElementById('table-body').innerHTML = '<tr><td colspan="10">Unable to load records.</td></tr>';
-        return;
-      }
-      const data = await res.json();
-      const head = document.getElementById('table-head');
-      const body = document.getElementById('table-body');
-      head.innerHTML = '';
-      body.innerHTML = '';
-
-      if (data.length === 0) {
-        body.innerHTML = '<tr><td colspan="10">No records found.</td></tr>';
-        return;
-      }
-
-      const keys = Object.keys(data[0]);
-      keys.forEach(k => {
-        const th = document.createElement('th');
-        th.innerText = k;
-        head.appendChild(th);
-      });
-      head.appendChild(document.createElement('th')).innerText = 'Actions';
-
-      data.forEach(row => {
-        const tr = document.createElement('tr');
-        keys.forEach(k => {
-          const td = document.createElement('td');
-          td.innerText = row[k] ?? '';
-          tr.appendChild(td);
-        });
-
-        // Determine if user can edit/delete this row
-        const canManage = currentUser && (
-          currentUser.role === 'admin' || 
-          currentResource !== 'reviews' || 
-          (currentResource === 'reviews' && row.user_id === currentUser.id)
-        );
-
-        const actionTd = document.createElement('td');
-        if (canManage) {
-          actionTd.innerHTML = `
-            <button class="btn btn-edit" onclick='startEdit(${JSON.stringify(row)})'>Edit</button>
-            <button class="btn btn-danger" onclick='deleteRecord(${row.id})'>Delete</button>
-          `;
-        } else {
-          actionTd.innerHTML = '<em>Read-only</em>';
-        }
-        tr.appendChild(actionTd);
-        body.appendChild(tr);
-      });
-    }
-
-    function startEdit(row) {
-      editRecordId = row.id;
-      renderForm(row);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function cancelEdit() {
-      editRecordId = null;
-      renderForm();
-    }
-
-    async function saveRecord() {
-      const payload = {};
-      schemas[currentResource].forEach(field => {
-        const val = document.getElementById(`input-${field}`).value;
-        if (val !== '') payload[field] = val;
-      });
-
-      const url = editRecordId ? `/api/${currentResource}/${editRecordId}` : `/api/${currentResource}`;
-      const method = editRecordId ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method: method,
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload)
-      });
-
-      if (res.ok) {
-        cancelEdit();
-        fetchRecords();
-      } else {
-        const err = await res.json();
-        alert('Error: ' + JSON.stringify(err.error));
-      }
-    }
-
-    async function deleteRecord(id) {
-      if (!confirm(`Delete record #${id}?`)) return;
-      const res = await fetch(`/api/${currentResource}/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
-      if (res.ok) {
-        fetchRecords();
-      } else {
-        const err = await res.json();
-        alert('Error: ' + JSON.stringify(err.error));
-      }
-    }
-
-    renderAuthHeader();
-    switchTab('authors');
-  </script>
+  <script type="module" src="./js/app.js"></script>
 </body>
 </html>
