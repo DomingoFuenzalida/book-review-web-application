@@ -1,13 +1,51 @@
 const express = require('express');
 const router = express.Router();
-const { Author } = require('../models');
+const { Author, Book, Review, SaleByYear } = require('../models');
 const { requireAuth } = require('../middleware/auth');
+
+const processAuthorStats = (author) => {
+  let totalSales = 0;
+  let totalScore = 0;
+  let reviewCount = 0;
+
+  (author.Books || []).forEach(book => {
+    const salesArray = book.SaleByYears || book.sale_by_years || book.SalesByYears || [];
+    salesArray.forEach(sale => {
+      totalSales += (sale.sales || 0);
+    });
+    
+    (book.Reviews || []).forEach(review => {
+      totalScore += review.score;
+      reviewCount++;
+    });
+  });
+
+  const data = author.toJSON();
+  data.books_count = (author.Books || []).length;
+  data.average_score = reviewCount > 0 ? (totalScore / reviewCount) : 0;
+  data.total_sales = totalSales;
+  
+  delete data.Books; 
+  
+  return data;
+};
 
 // GET /api/authors (Public)
 router.get('/', async (req, res) => {
   try {
-    const authors = await Author.findAll();
-    res.json(authors);
+    const authors = await Author.findAll({
+      include: [{
+        model: Book,
+        include: [
+          { model: Review, attributes: ['score'] },
+          { model: SaleByYear, attributes: ['sales'] }
+        ]
+      }]
+    });
+    
+    // Mapeamos los autores para agregarles las estadísticas
+    const stats = authors.map(processAuthorStats);
+    res.json(stats);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -16,9 +54,19 @@ router.get('/', async (req, res) => {
 // GET /api/authors/:id (Public)
 router.get('/:id', async (req, res) => {
   try {
-    const author = await Author.findByPk(req.params.id);
+    const author = await Author.findByPk(req.params.id, {
+      include: [{
+        model: Book,
+        include: [
+          { model: Review, attributes: ['score'] },
+          { model: SaleByYear, attributes: ['sales'] }
+        ]
+      }]
+    });
+    
     if (!author) return res.status(404).json({ error: 'Author not found' });
-    res.json(author);
+    
+    res.json(processAuthorStats(author));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

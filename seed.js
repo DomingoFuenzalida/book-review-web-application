@@ -1,5 +1,40 @@
 const { sequelize, User, Author, Book, Review, SaleByYear } = require('./models');
 
+
+function generateSummary() {
+  const subjects = ['A brave knight', 'A clever detective', 'A young wizard', 'A rogue AI', 'An ordinary teacher', 'A space explorer', 'A lost prince'];
+  const actions = ['uncovers a dark conspiracy', 'journeys to a distant planet', 'fights for justice', 'solves a mysterious murder', 'discovers a hidden magical world', 'tries to survive', 'seeks revenge'];
+  const settings = ['in a dystopian future.', 'during the Renaissance.', 'in modern-day New York.', 'in a post-apocalyptic wasteland.', 'in a quiet suburban town.', 'in a cyberpunk city.', 'in ancient Rome.'];
+  const keywords = ['magic', 'dragon', 'mystery', 'technology', 'romance', 'war', 'peace', 'aliens', 'vampires', 'zombies', 'science', 'history'];
+
+  const sub = subjects[Math.floor(Math.random() * subjects.length)];
+  const act = actions[Math.floor(Math.random() * actions.length)];
+  const set = settings[Math.floor(Math.random() * settings.length)];
+  const kw = keywords[Math.floor(Math.random() * keywords.length)];
+  const kw2 = keywords[Math.floor(Math.random() * keywords.length)];
+
+  return `${sub} ${act} ${set} A gripping tale full of ${kw} and ${kw2}.`;
+}
+
+function generateReview(score) {
+  const positiveAdjectives = ['amazing', 'fascinating', 'mind-blowing', 'insightful', 'masterful', 'brilliant', 'captivating'];
+  const negativeAdjectives = ['terrible', 'boring', 'dull', 'confusing', 'sloppy', 'predictable', 'underwhelming'];
+  
+  const positivePhrases = ['I could not put it down.', 'Highly recommended!', 'A true masterpiece.', 'Loved the character development.', 'Best book of the year.'];
+  const negativePhrases = ['A complete waste of time.', 'Not what I expected.', 'It was okay, I guess.', 'The pacing was too slow.', 'I struggled to finish it.'];
+
+  // Ajustamos el texto según el score aleatorio para que tenga sentido
+  const isPositive = score >= 3;
+  const adjs = isPositive ? positiveAdjectives : negativeAdjectives;
+  const phrases = isPositive ? positivePhrases : negativePhrases;
+
+  const adj = adjs[Math.floor(Math.random() * adjs.length)];
+  const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+
+  return `The story was absolutely ${adj}. ${phrase}`;
+}
+
+
 async function seedDatabase() {
   console.log('Seeding database with admin & hashed passwords...');
 
@@ -26,13 +61,12 @@ async function seedDatabase() {
     });
   }
 
-  // Use individualHooks: true so the bcrypt beforeCreate hook runs
   await User.bulkCreate(usersData, { individualHooks: true });
   const users = await User.findAll({ attributes: ['id', 'role'] });
 
   // 2. Create Authors
   const authorsData = [];
-  const countries = ['Chile', 'USA', 'UK', 'Spain', 'Argentina', 'Japan'];
+  const countries = ['Chile', 'USA', 'UK', 'Spain', 'Argentina', 'Japan', 'France', 'Italy'];
   for (let i = 1; i <= 50; i++) {
     authorsData.push({
       name: `Author ${i}`,
@@ -51,7 +85,7 @@ async function seedDatabase() {
     const pubYear = 1995 + (i % 28);
     booksData.push({
       name: `Book Title ${i}`,
-      summary: `Summary of Book ${i} with deep storylines.`,
+      summary: generateSummary(), 
       date_of_publish: `${pubYear}-06-15`,
       author_id: randomAuthor.id
     });
@@ -68,9 +102,11 @@ async function seedDatabase() {
     const reviewCount = Math.floor(Math.random() * 10) + 1;
     for (let r = 1; r <= reviewCount; r++) {
       const randomUser = regularUsers[Math.floor(Math.random() * regularUsers.length)];
+      const randomScore = Math.floor(Math.random() * 5) + 1; // Generamos el score primero
+      
       reviewsData.push({
-        review: `Review #${r} for book ID ${book.id}`,
-        score: Math.floor(Math.random() * 5) + 1,
+        review: generateReview(randomScore), 
+        score: randomScore,
         number_of_votes: Math.floor(Math.random() * 100),
         book_id: book.id,
         user_id: randomUser.id
@@ -89,7 +125,7 @@ async function seedDatabase() {
 
   await Review.bulkCreate(reviewsData);
   await SaleByYear.bulkCreate(salesData);
-  console.log('Database seeded with hashed passwords.');
+  console.log('Database seeded with random vocabulary and hashed passwords.');
 }
 
 if (require.main === module) {

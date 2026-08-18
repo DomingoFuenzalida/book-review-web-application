@@ -21,7 +21,7 @@ app.use('/api/books', require('./routes/books'));
 app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/sales', require('./routes/sales'));
 app.use('/api/users', require('./routes/users'));
-
+app.use('/api/reports', require('./routes/reports'));
 async function startServer() {
   try {
     await sequelize.authenticate();

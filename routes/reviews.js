@@ -6,7 +6,16 @@ const { requireAuth } = require('../middleware/auth');
 // GET /api/reviews (Public Read)
 router.get('/', async (req, res) => {
   try {
-    const reviews = await Review.findAll();
+    const { book_id } = req.query;
+    const whereClause = {};
+    if (book_id) {
+      whereClause.book_id = book_id;
+    }
+
+    const reviews = await Review.findAll({
+      where: whereClause
+    });
+    
     res.json(reviews);
   } catch (err) {
     res.status(500).json({ error: err.message });

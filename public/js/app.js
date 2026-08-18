@@ -2,6 +2,8 @@ import { Auth } from './api.js';
 import { AuthorViews } from './domains/authors.js';
 import { BookViews } from './domains/books.js';
 import { UserViews } from './domains/users.js';
+import { ReportViews } from './domains/reports.js';
+import { SearchViews } from './domains/search.js';
 
 const appRoot = document.getElementById('app-root');
 const authSection = document.getElementById('auth-section');
@@ -28,6 +30,10 @@ async function router() {
   } else if (domain === 'users') {
     if (id) await UserViews.renderDetail(appRoot, id);
     else await UserViews.renderList(appRoot);
+  } else if (domain === 'reports') {
+    await ReportViews.renderList(appRoot);
+  } else if (domain === 'search') { // <-- AÑADE ESTA CONDICIÓN
+    await SearchViews.renderList(appRoot);
   } else {
     appRoot.innerHTML = `<h2 class="text-xl font-medium text-slate-800">404 - Page Not Found</h2>`;
   }

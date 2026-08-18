@@ -1,11 +1,13 @@
+// js/domains/authors.js
 import { API, Auth } from '../api.js';
 
-// Estado local para paginar y buscar autores
+// Estado local para paginar, buscar y ordenar autores
 let authorsState = {
   data: [],
   page: 1,
   perPage: 30, 
-  searchQuery: '' 
+  searchQuery: '',
+  sort: { column: 'name', dir: 'asc' } // Control de ordenamiento
 };
 
 export const AuthorViews = {
@@ -13,7 +15,6 @@ export const AuthorViews = {
     const authors = await API.request('/authors');
     const isAdmin = Auth.getUser()?.role === 'admin';
     
-    // Guardar en el estado local
     authorsState.data = authors || [];
     authorsState.page = 1;
     authorsState.searchQuery = '';
@@ -22,13 +23,12 @@ export const AuthorViews = {
       <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center mb-6 gap-4">
         <h2 class="text-2xl font-semibold tracking-tight">Authors</h2>
         <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <!-- Buscador de Autores -->
           <input type="text" id="search-author" placeholder="Search by name or country..." class="border border-slate-300 rounded p-2 text-sm focus:outline-none focus:border-slate-500 w-full sm:w-64">
           ${isAdmin ? `<button id="btn-new-author" class="bg-slate-800 text-white text-sm px-4 py-2 rounded shadow-sm hover:bg-slate-700 transition-colors whitespace-nowrap">+ New Author</button>` : ''}
         </div>
       </div>
 
-      <!-- Formulario de Creación (Solo Admins) -->
+      <!-- Formulario de Creación -->
       ${isAdmin ? `
       <div id="form-create-author" class="hidden mb-8 bg-slate-50 border border-slate-200 p-4 rounded-md shadow-sm">
         <h3 class="text-lg font-medium text-slate-900 mb-4">Create New Author</h3>
@@ -45,20 +45,17 @@ export const AuthorViews = {
       </div>
       ` : ''}
 
-      <!-- Contenedor dinámico donde se renderizará la tabla paginada/filtrada -->
       <div id="authors-list-container"></div>
     `;
 
     container.innerHTML = html;
 
-    // Lógica para el buscador (Evento input para buscar en tiempo real)
     document.getElementById('search-author').addEventListener('input', (e) => {
       authorsState.searchQuery = e.target.value.toLowerCase();
-      authorsState.page = 1; // Al buscar, siempre regresamos a la página 1
+      authorsState.page = 1;
       this.renderAuthorsTable();
     });
 
-    // Lógica para Crear (Admins)
     if (isAdmin) {
       document.getElementById('btn-new-author').onclick = () => {
         document.getElementById('form-create-author').classList.remove('hidden');
@@ -85,20 +82,32 @@ export const AuthorViews = {
       };
     }
 
-    // Dibujar la tabla por primera vez
     this.renderAuthorsTable();
   },
 
-  // FUNCIÓN AUXILIAR: Tabla, filtro y paginación
   renderAuthorsTable() {
     const listContainer = document.getElementById('authors-list-container');
     if (!listContainer) return;
 
-    // 1. Filtrar los datos locales
-    const filteredAuthors = authorsState.data.filter(a => {
+    // 1. Filtrar
+    let filteredAuthors = authorsState.data.filter(a => {
       const matchName = a.name.toLowerCase().includes(authorsState.searchQuery);
       const matchCountry = a.country && a.country.toLowerCase().includes(authorsState.searchQuery);
       return matchName || matchCountry;
+    });
+
+    // 2. Ordenar interactivo
+    filteredAuthors.sort((a, b) => {
+      let valA = a[authorsState.sort.column];
+      let valB = b[authorsState.sort.column];
+      
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+      if (!isNaN(valA) && !isNaN(valB)) { valA = Number(valA); valB = Number(valB); }
+
+      if (valA < valB) return authorsState.sort.dir === 'asc' ? -1 : 1;
+      if (valA > valB) return authorsState.sort.dir === 'asc' ? 1 : -1;
+      return 0;
     });
 
     const totalAuthors = filteredAuthors.length;
@@ -108,7 +117,7 @@ export const AuthorViews = {
       return;
     }
 
-    // 2. Paginación
+    // 3. Paginar
     const totalPages = Math.ceil(totalAuthors / authorsState.perPage) || 1;
     if (authorsState.page > totalPages) authorsState.page = totalPages;
     if (authorsState.page < 1) authorsState.page = 1;
@@ -116,14 +125,18 @@ export const AuthorViews = {
     const startIndex = (authorsState.page - 1) * authorsState.perPage;
     const paginatedAuthors = filteredAuthors.slice(startIndex, startIndex + authorsState.perPage);
 
-    // 3. Render HTML
+    const sortIcon = (col) => authorsState.sort.column === col ? (authorsState.sort.dir === 'asc' ? ' ↑' : ' ↓') : '';
+
     let html = `
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto bg-white border border-slate-200 rounded-md shadow-sm">
         <table class="w-full text-left text-sm text-slate-600">
           <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
             <tr>
-              <th class="px-4 py-3 font-medium">Name</th>
-              <th class="px-4 py-3 font-medium">Country</th>
+              <th class="px-4 py-3 cursor-pointer hover:bg-slate-200 font-medium" data-sort="name">Name ${sortIcon('name')}</th>
+              <th class="px-4 py-3 cursor-pointer hover:bg-slate-200 font-medium" data-sort="country">Country ${sortIcon('country')}</th>
+              <th class="px-4 py-3 cursor-pointer hover:bg-slate-200 font-medium text-center" data-sort="books_count">Books ${sortIcon('books_count')}</th>
+              <th class="px-4 py-3 cursor-pointer hover:bg-slate-200 font-medium text-center" data-sort="average_score">Avg Score ${sortIcon('average_score')}</th>
+              <th class="px-4 py-3 cursor-pointer hover:bg-slate-200 font-medium text-center" data-sort="total_sales">Sales ${sortIcon('total_sales')}</th>
               <th class="px-4 py-3 font-medium text-right">Action</th>
             </tr>
           </thead>
@@ -132,6 +145,9 @@ export const AuthorViews = {
               <tr class="hover:bg-slate-50 transition-colors">
                 <td class="px-4 py-3 font-medium text-slate-900">${a.name}</td>
                 <td class="px-4 py-3">${a.country || '—'}</td>
+                <td class="px-4 py-3 text-center">${a.books_count || 0}</td>
+                <td class="px-4 py-3 text-center font-semibold text-blue-600">${parseFloat(a.average_score || 0).toFixed(1)}</td>
+                <td class="px-4 py-3 text-center text-emerald-600">${Number(a.total_sales || 0).toLocaleString()}</td>
                 <td class="px-4 py-3 text-right">
                   <a href="#/authors/${a.id}" class="text-blue-600 hover:text-blue-800 font-medium">View</a>
                 </td>
@@ -142,10 +158,9 @@ export const AuthorViews = {
       </div>
     `;
 
-    // 4. Controles de paginación
     if (totalPages > 1) {
       html += `
-        <div class="flex justify-between items-center mt-6 pt-4 border-t border-slate-100">
+        <div class="flex justify-between items-center mt-4">
           <button id="btn-prev-authors" class="text-sm px-3 py-1 border border-slate-200 rounded bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed" ${authorsState.page === 1 ? 'disabled' : ''}>&larr; Previous</button>
           <span class="text-sm text-slate-500 font-medium">Page ${authorsState.page} of ${totalPages}</span>
           <button id="btn-next-authors" class="text-sm px-3 py-1 border border-slate-200 rounded bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed" ${authorsState.page === totalPages ? 'disabled' : ''}>Next &rarr;</button>
@@ -155,7 +170,20 @@ export const AuthorViews = {
 
     listContainer.innerHTML = html;
 
-    // 5. Asignar Eventos a los botones de paginación
+    // Eventos de ordenamiento de columnas
+    listContainer.querySelectorAll('th[data-sort]').forEach(th => {
+      th.addEventListener('click', () => {
+        const col = th.getAttribute('data-sort');
+        if (authorsState.sort.column === col) {
+          authorsState.sort.dir = authorsState.sort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+          authorsState.sort.column = col;
+          authorsState.sort.dir = 'asc';
+        }
+        this.renderAuthorsTable();
+      });
+    });
+
     const btnPrev = document.getElementById('btn-prev-authors');
     const btnNext = document.getElementById('btn-next-authors');
     if (btnPrev) btnPrev.addEventListener('click', () => { authorsState.page--; this.renderAuthorsTable(); });
@@ -163,6 +191,7 @@ export const AuthorViews = {
   },
 
   async renderDetail(container, id) {
+    // Al traer el autor individual, el backend ahora incluye las estadísticas procesadas
     const [author, books] = await Promise.all([
       API.request(`/authors/${id}`),
       API.request(`/books?author_id=${id}`) 
@@ -188,10 +217,27 @@ export const AuthorViews = {
       <!-- Vista de Lectura -->
       <div id="author-view-mode" class="mb-10">
         <h2 class="text-3xl font-semibold tracking-tight text-slate-900 mb-1">${author.name}</h2>
-        <div class="text-sm text-slate-500 mb-4 flex gap-4">
+        <div class="text-sm text-slate-500 mb-6 flex gap-4">
           <span>Born: ${author.birth_date || 'Unknown'}</span>
           <span>Location: ${author.country || 'Unknown'}</span>
         </div>
+
+        <!-- Tarjetas de Estadísticas del Autor -->
+        <div class="grid grid-cols-3 gap-4 mb-8">
+          <div class="bg-white p-4 rounded-md shadow-sm border border-slate-200 text-center">
+            <span class="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Published Books</span>
+            <span class="text-2xl font-semibold text-slate-800">${author.books_count || 0}</span>
+          </div>
+          <div class="bg-white p-4 rounded-md shadow-sm border border-slate-200 text-center">
+            <span class="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Avg Score</span>
+            <span class="text-2xl font-semibold text-blue-600">${parseFloat(author.average_score || 0).toFixed(2)}</span>
+          </div>
+          <div class="bg-white p-4 rounded-md shadow-sm border border-slate-200 text-center">
+            <span class="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total Sales</span>
+            <span class="text-2xl font-semibold text-emerald-600">${Number(author.total_sales || 0).toLocaleString()}</span>
+          </div>
+        </div>
+
         <p class="text-slate-700 leading-relaxed max-w-3xl">${author.description || 'No biography available.'}</p>
       </div>
 
@@ -235,7 +281,6 @@ export const AuthorViews = {
 
     container.innerHTML = html;
 
-    // Lógica para Editar/Eliminar (Admins)
     if (isAdmin) {
       document.getElementById('btn-edit-author').onclick = () => {
         document.getElementById('author-view-mode').classList.add('hidden');
@@ -255,14 +300,14 @@ export const AuthorViews = {
           description: document.getElementById('edit-author-desc').value
         };
         const res = await API.request(`/authors/${id}`, 'PUT', payload);
-        if (res) this.renderDetail(container, id); // Recargar detalle
+        if (res) this.renderDetail(container, id); 
         else alert('Error updating author');
       };
 
       document.getElementById('btn-delete-author').onclick = async () => {
         if (!confirm(`Are you sure you want to delete "${author.name}"? This action cannot be undone.`)) return;
         const res = await API.request(`/authors/${id}`, 'DELETE');
-        if (res) window.location.hash = '#/authors'; // Volver a la lista
+        if (res) window.location.hash = '#/authors';
         else alert('Error deleting author. Make sure they have no linked books first.');
       };
     }
