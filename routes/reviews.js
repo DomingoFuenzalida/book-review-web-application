@@ -3,7 +3,7 @@ const router = express.Router();
 const { Review } = require('../models');
 const { requireAuth } = require('../middleware/auth');
 
-// Public read
+// GET /api/reviews (Public Read)
 router.get('/', async (req, res) => {
   try {
     const reviews = await Review.findAll();
@@ -13,7 +13,31 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Create Review (Assigned automatically to logged-in user)
+// POST /api/reviews/:id/vote (Mark Review as Useful / Up-vote)
+router.post('/:id/vote', requireAuth, async (req, res) => {
+  try {
+    const review = await Review.findByPk(req.params.id);
+    if (!review) return res.status(404).json({ error: 'Review not found' });
+
+    // Prevent authors from upvoting their own review
+    if (review.user_id === req.user.id) {
+      return res.status(400).json({ error: 'You cannot vote on your own review' });
+    }
+
+    await review.increment('number_of_votes', { by: 1 });
+    await review.reload();
+
+    res.json({
+      message: 'Vote recorded successfully',
+      id: review.id,
+      number_of_votes: review.number_of_votes
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/reviews (Create Review - Assigned automatically to logged-in user)
 router.post('/', requireAuth, async (req, res) => {
   try {
     const reviewData = { ...req.body, user_id: req.user.id };
@@ -24,7 +48,7 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-// Update Review (Only owner or admin)
+// PUT /api/reviews/:id (Update Review - Owner or Admin)
 router.put('/:id', requireAuth, async (req, res) => {
   try {
     const review = await Review.findByPk(req.params.id);
@@ -41,7 +65,7 @@ router.put('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// Delete Review (Only owner or admin)
+// DELETE /api/reviews/:id (Delete Review - Owner or Admin)
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const review = await Review.findByPk(req.params.id);
