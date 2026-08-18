@@ -425,7 +425,7 @@ export const BookViews = {
           number_of_votes: newVotes
         };
 
-        const response = await API.request(`/reviews/${reviewId}`, 'PUT', payload);
+        const response = await API.request(`/reviews/${reviewId}/vote`, 'POST', payload);
 
         if (response) {
           reviewsState.data[reviewIndex].number_of_votes = newVotes;

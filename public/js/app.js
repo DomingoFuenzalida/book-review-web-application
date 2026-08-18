@@ -1,6 +1,7 @@
 import { Auth } from './api.js';
 import { AuthorViews } from './domains/authors.js';
 import { BookViews } from './domains/books.js';
+import { UserViews } from './domains/users.js';
 
 const appRoot = document.getElementById('app-root');
 const authSection = document.getElementById('auth-section');
@@ -12,7 +13,6 @@ async function router() {
   const domain = parts[0] || 'authors';
   const id = parts[1]; 
 
-  // Update Nav highlighting
   document.querySelectorAll('.nav-link').forEach(link => {
     link.classList.toggle('active', link.getAttribute('href') === `#/${domain}`);
   });
@@ -25,14 +25,26 @@ async function router() {
   } else if (domain === 'books') {
     if (id) await BookViews.renderDetail(appRoot, id);
     else await BookViews.renderList(appRoot);
+  } else if (domain === 'users') {
+    if (id) await UserViews.renderDetail(appRoot, id);
+    else await UserViews.renderList(appRoot);
   } else {
     appRoot.innerHTML = `<h2 class="text-xl font-medium text-slate-800">404 - Page Not Found</h2>`;
   }
 }
 
 function renderAuth() {
+  
   const user = Auth.getUser();
+  const navUsersLink = document.getElementById('nav-users-link');
+
   if (user) {
+    // Si es admin, mostrar la pestaña de usuarios
+    if (user.role === 'admin' && navUsersLink) {
+      navUsersLink.classList.remove('hidden');
+    } else if (navUsersLink) {
+      navUsersLink.classList.add('hidden');
+    }
     authSection.innerHTML = `
       <span class="text-slate-600">Logged in as <span class="font-medium text-slate-900">${user.username}</span></span>
       <button id="btn-logout" class="text-slate-500 hover:text-slate-900 font-medium">Logout</button>
