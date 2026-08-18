@@ -1,4 +1,4 @@
-let currentUser = null;
+let currentUser = JSON.parse(localStorage.getItem('bookApp_user')) || null;
 
 export const Auth = {
   getUser: () => currentUser,
@@ -12,6 +12,7 @@ export const Auth = {
       });
       if (res.ok) {
         currentUser = await res.json();
+        localStorage.setItem('bookApp_user', JSON.stringify(currentUser));
         return { success: true };
       }
       const error = await res.json();
@@ -21,7 +22,10 @@ export const Auth = {
     }
   },
 
-  logout() { currentUser = null; }
+  logout() { 
+    currentUser = null; 
+    localStorage.removeItem('bookApp_user');
+  }
 };
 
 export const API = {

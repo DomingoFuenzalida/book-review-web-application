@@ -6,9 +6,16 @@ const { requireAuth } = require('../middleware/auth');
 // GET /api/books (Public)
 router.get('/', async (req, res) => {
   try {
+    const { author_id } = req.query;
+    const whereClause = {};
+    if (author_id) {
+      whereClause.author_id = author_id;
+    }
     const books = await Book.findAll({
+      where: whereClause,
       include: [{ model: Author, attributes: ['id', 'name', 'country'] }]
     });
+    
     res.json(books);
   } catch (err) {
     res.status(500).json({ error: err.message });
