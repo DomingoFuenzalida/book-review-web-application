@@ -1,109 +1,205 @@
 # Book Review Web Application
 
-An Express and SQLite library application for browsing books and authors, reading and writing reviews, and viewing book reports.
+An Express and SQLite library application for browsing books and authors, reading and writing reviews, managing users, and analyzing book sales.
 
-## What the app does
+---
 
-- Browse authors and view their books.
-- Browse books, book details, and associated reviews.
-- Search books by their generated summary.
-- Register and log in as a user.
-- Create reviews while logged in.
-- View the top 10 books by average review score.
-- View the top 50 selling books and yearly sales information.
-- Manage users from the Users section when logged in as an administrator.
+## Features
 
-The frontend is served by the same Express server as the API. Open the root URL in a browser to use the application.
+- **Entity Management:** Full CRUD operations for Authors, Books, Reviews, Sales by Year, and Users.
+- **Authentication & RBAC:** User registration (`/api/auth/register`), login (`/api/auth/login`), password hashing via `bcrypt`, and role-based access control (Admin vs. Standard User).
+- **Ownership & Permissions:** Standard users can create reviews and modify/delete only their own content. Admins have global management rights.
+- **Community Feedback:** Authenticated users can vote and mark reviews as helpful on reviews created by other users.
+- **Automated Seeding:** Automatically populates fresh databases on startup with 1 admin, 20 users, 50 authors, 300 books, dynamic reviews, and 5-year sales projections.
+- **Containerization & Orchestration:** Fully configured for Docker Compose, Docker Swarm, and Kubernetes (Minikube) with persistent storage and decoupled configurations.
 
-## Requirements
+---
 
-- Docker
-- Docker Compose (the `docker compose` command)
+## Default Credentials
 
-## Run with Docker
+| Account | Username | Password | Role |
+| :--- | :--- | :--- | :--- |
+| Administrator | `admin` | `adminpassword123` | `admin` |
+| Regular User | `user_1` | `password123` | `user` |
 
-From the project directory, build and start the application:
+---
 
+## Prerequisites & Installation
+
+### 1. Docker
+Ensure Docker Engine and Docker Compose are installed and running on your host system.
+
+### 2. Install kubectl (Kubernetes CLI)
+If you don't have `kubectl` installed on Linux/WSL2:
+```bash
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+rm -f kubectl
+```
+
+### 3. Install Minikube
+If you don't have `minikube` installed on Linux/WSL2:
+```bash
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+rm -f minikube-linux-amd64
+```
+
+---
+
+## Option 1: Run with Docker Compose
+
+### Start the Application
+From the project root directory:
 ```bash
 docker compose up --build
 ```
+Then open <http://localhost:3000> in your web browser.
 
-
-Then open <http://localhost:3000>.
-
-The Compose configuration mounts the project directory into the container and mounts `./data` at `/app/data`. This means the SQLite database remains in the project directory when the container stops. Stop the application with:
-
-```bash
-docker compose down
-```
-
-To run it in the background:
-
+### Run in the Background
 ```bash
 docker compose up --build -d
 ```
 
-View logs or stop the background container with:
-
+### View Logs and Stop
 ```bash
+# View live logs
 docker compose logs -f api
+
+# Stop containers
 docker compose down
 ```
 
-## Database and resetting data
-
-The application uses SQLite at:
-
-```text
-data/database.sqlite
-```
-
-The file is persisted through the `./data:/app/data` Docker volume. To completely reset the local database:
-
+### Reset Database (Docker Compose)
+The database is stored in `./data/database.sqlite`. To completely reset:
 ```bash
 docker compose down
 rm -f data/database.sqlite
 docker compose up --build
 ```
 
-Deleting the file is useful when you want a clean demo database, need to remove test data, or changed the model and want Sequelize to recreate the local schema. Do not do this if the database contains data you need: deleting the file permanently removes users, authors, books, reviews, and sales stored in it. Back it up first if necessary.
+---
 
-## How seeding works
+## Option 2: Deploy to Kubernetes (Minikube)
 
-The seed script creates demo data, including:
+The Kubernetes setup utilizes standard manifests located in `k8s/`:
+- `configmap.yaml`: Application environment variables.
+- `secret.yaml`: Secure default credentials.
+- `pvc.yaml`: PersistentVolumeClaim ensuring SQLite data survives Pod restarts.
+- `deployment.yaml`: Application container configuration mounting the PVC.
+- `service.yaml`: NodePort service exposing the application.
 
-- 1 administrator and 20 regular users
-- 50 authors
-- 300 books
-- Random reviews for every book
-- Five years of random sales data for every book
+### Step-by-Step Deployment
 
-Passwords are hashed by the `User` model's creation hook. The default seeded accounts are:
+1. **Start Minikube Cluster:**
+   ```bash
+   minikube start --driver=docker
+   ```
 
-| Account | Username | Password |
-| --- | --- | --- |
-| Administrator | `admin` | `adminpassword123` |
-| Regular user | `user_1` | `password123` |
+2. **Build and Load the Docker Image into Minikube:**
+   ```bash
+   docker build -t book-review-api:latest .
+   minikube image load book-review-api:latest
+   ```
 
-Run the seed manually inside the running container with:
+3. **Apply Kubernetes Manifests:**
+   ```bash
+   kubectl apply -f k8s/
+   ```
 
+4. **Wait for Pod Readiness:**
+   ```bash
+   kubectl wait --for=condition=ready pod -l app=book-app --timeout=90s
+   ```
+
+5. **Expose and Access the Application:**
+   Run the port forward command in a dedicated terminal window:
+   ```bash
+   kubectl port-forward svc/book-app-service 3000:3000
+   ```
+   Open your browser at <http://localhost:3000>.
+
+   *(Alternative: Run `minikube service book-app-service` to open a direct tunnel)*.
+
+---
+
+### Verifying Kubernetes Requirements
+
+#### 1. Service Reachability
+Test that the API responds through the exposed service:
 ```bash
-docker compose exec api npm run seed
+curl http://localhost:3000/
 ```
 
-Important: `npm run seed` does not clear existing tables before inserting records. Running it more than once can create duplicate demo data and additional reviews/sales. For a predictable fresh dataset, stop the containers, delete `data/database.sqlite`, and start the app again.
-
-On normal startup, `index.js` synchronizes the Sequelize schema and automatically runs the seed only when the database contains zero authors. A newly created or deleted database is therefore seeded automatically on the next `docker compose up`.
-
-## Useful commands
-
+#### 2. Pod Self-Healing (Auto-Recreation)
+Delete the running pod and observe Kubernetes instantly creating a replacement:
 ```bash
-# Follow application logs
-docker compose logs -f api
-
-# Open a shell in the API container
-docker compose exec api sh
-
-# Rebuild after dependency or Dockerfile changes
-docker compose up --build
+kubectl delete pod -l app=book-app
+kubectl get pods -w
 ```
+
+#### 3. Database Persistence across Pod Restarts
+1. Create or verify records on the frontend / API.
+2. Delete the active pod:
+   ```bash
+   kubectl delete pod -l app=book-app
+   kubectl wait --for=condition=ready pod -l app=book-app --timeout=60s
+   ```
+3. Re-open port forwarding (if disconnected) and query the data:
+   ```bash
+   kubectl port-forward svc/book-app-service 3000:3000
+   ```
+   Your records and user modifications remain intact inside the PersistentVolumeClaim.
+
+---
+
+### Reset Database (Kubernetes)
+
+To purge all data and force a fresh automated seed on the cluster:
+```bash
+# 1. Delete deployment and PersistentVolumeClaim
+kubectl delete deployment book-app-deployment
+kubectl delete pvc book-app-data-pvc
+
+# 2. Re-apply manifests (a clean PVC will be provisioned and auto-seeded)
+kubectl apply -f k8s/
+kubectl wait --for=condition=ready pod -l app=book-app --timeout=90s
+```
+
+---
+
+### Tear Down Kubernetes Cluster
+
+To stop and remove all local Kubernetes resources:
+```bash
+# Delete all resources defined in manifests
+kubectl delete -f k8s/
+
+# Stop Minikube
+minikube stop
+
+# (Optional) Delete Minikube cluster entirely to reclaim disk space
+minikube delete --all --purge
+```
+
+---
+
+## Option 3: Deploy with Docker Swarm
+
+1. **Initialize Swarm and Deploy Stack:**
+   ```bash
+   docker swarm init
+   docker stack deploy -c docker-stack.yml book_stack
+   ```
+
+2. **Verify Running Services:**
+   ```bash
+   docker stack services book_stack
+   ```
+   Access the app at <http://localhost:3000>.
+
+3. **Remove Swarm Stack:**
+   ```bash
+   docker stack rm book_stack
+   docker volume rm book_stack_book_data
+   ```
