@@ -36,3 +36,7 @@ Thumbs.db
 Desktop.ini
 .vscode/
 .idea/
+
+# Local binaries
+kubectl
+minikube-linux-amd64
