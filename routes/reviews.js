@@ -1,7 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const { Review } = require('../models');
+const { Review, Book } = require('../models');
 const { requireAuth } = require('../middleware/auth');
+const { delCache } = require('../utils/cache');
+
+// Helper to invalidate cache based on review's book
+const invalidateReviewCache = async (book_id) => {
+  await delCache('top-10-rated');
+  await delCache('authors-overview');
+  if (book_id) {
+    const book = await Book.findByPk(book_id);
+    if (book) {
+      await delCache(`author-${book.author_id}`);
+    }
+  }
+};
 
 // GET /api/reviews (Public Read)
 router.get('/', async (req, res) => {
@@ -51,6 +64,7 @@ router.post('/', requireAuth, async (req, res) => {
   try {
     const reviewData = { ...req.body, user_id: req.user.id };
     const review = await Review.create(reviewData);
+    await invalidateReviewCache(review.book_id);
     res.status(201).json(review);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -68,6 +82,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     }
 
     await review.update(req.body);
+    await invalidateReviewCache(review.book_id);
     res.json(review);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -84,7 +99,9 @@ router.delete('/:id', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden: You do not own this review' });
     }
 
+    const book_id = review.book_id;
     await review.destroy();
+    await invalidateReviewCache(book_id);
     res.json({ message: 'Review deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });

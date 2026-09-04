@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { Author, Book, Review, SaleByYear } = require('../models');
 const { requireAuth } = require('../middleware/auth');
+const { getCache, setCache, delCache } = require('../utils/cache');
 
 const processAuthorStats = (author) => {
   let totalSales = 0;
@@ -33,6 +34,11 @@ const processAuthorStats = (author) => {
 // GET /api/authors (Public)
 router.get('/', async (req, res) => {
   try {
+    const cachedData = await getCache('authors-overview');
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
     const authors = await Author.findAll({
       include: [{
         model: Book,
@@ -45,6 +51,7 @@ router.get('/', async (req, res) => {
     
     // Mapeamos los autores para agregarles las estadísticas
     const stats = authors.map(processAuthorStats);
+    await setCache('authors-overview', stats);
     res.json(stats);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -54,6 +61,12 @@ router.get('/', async (req, res) => {
 // GET /api/authors/:id (Public)
 router.get('/:id', async (req, res) => {
   try {
+    const cacheKey = `author-${req.params.id}`;
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
     const author = await Author.findByPk(req.params.id, {
       include: [{
         model: Book,
@@ -66,7 +79,9 @@ router.get('/:id', async (req, res) => {
     
     if (!author) return res.status(404).json({ error: 'Author not found' });
     
-    res.json(processAuthorStats(author));
+    const stats = processAuthorStats(author);
+    await setCache(cacheKey, stats);
+    res.json(stats);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -76,6 +91,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', requireAuth, async (req, res) => {
   try {
     const author = await Author.create(req.body);
+    await delCache('authors-overview');
     res.status(201).json(author);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -89,6 +105,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     if (!author) return res.status(404).json({ error: 'Author not found' });
 
     await author.update(req.body);
+    await delCache(['authors-overview', `author-${req.params.id}`]);
     res.json(author);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -100,6 +117,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const deleted = await Author.destroy({ where: { id: req.params.id } });
     if (!deleted) return res.status(404).json({ error: 'Author not found' });
+    await delCache(['authors-overview', `author-${req.params.id}`]);
     res.json({ message: 'Author deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });

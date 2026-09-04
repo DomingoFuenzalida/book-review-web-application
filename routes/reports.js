@@ -1,10 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const { Book, Author, Review, SaleByYear } = require('../models');
+const { getCache, setCache } = require('../utils/cache');
 
 // Top 10 Rated Books
 router.get('/top-10-rated', async (req, res) => {
   try {
+    const cachedData = await getCache('top-10-rated');
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
     const books = await Book.findAll({
       include: [{ model: Review }]
     });
@@ -35,7 +41,9 @@ router.get('/top-10-rated', async (req, res) => {
 
     processedBooks.sort((a, b) => b.avg_score - a.avg_score);
     
-    res.json(processedBooks.slice(0, 10));
+    const result = processedBooks.slice(0, 10);
+    await setCache('top-10-rated', result);
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -44,6 +52,11 @@ router.get('/top-10-rated', async (req, res) => {
 // Top 50 Selling Books
 router.get('/top-50-selling', async (req, res) => {
   try {
+    const cachedData = await getCache('top-50-selling');
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
     const books = await Book.findAll({
       include: [
         { model: SaleByYear, attributes: ['sales'] }, 
@@ -102,7 +115,9 @@ router.get('/top-50-selling', async (req, res) => {
     
     booksWithSales.sort((a, b) => b.book_sales - a.book_sales);
 
-    res.json(booksWithSales.slice(0, 50));
+    const result = booksWithSales.slice(0, 50);
+    await setCache('top-50-selling', result);
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { Book, Author } = require('../models');
 const { requireAuth } = require('../middleware/auth');
+const { delCache } = require('../utils/cache');
 
 // GET /api/books (Public)
 router.get('/', async (req, res) => {
@@ -39,6 +40,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', requireAuth, async (req, res) => {
   try {
     const book = await Book.create(req.body);
+    await delCache(['authors-overview', `author-${book.author_id}`]);
     res.status(201).json(book);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -52,6 +54,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     if (!book) return res.status(404).json({ error: 'Book not found' });
 
     await book.update(req.body);
+    await delCache(['authors-overview', `author-${book.author_id}`]);
     res.json(book);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -61,8 +64,11 @@ router.put('/:id', requireAuth, async (req, res) => {
 // DELETE /api/books/:id (Requires Auth)
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
-    const deleted = await Book.destroy({ where: { id: req.params.id } });
-    if (!deleted) return res.status(404).json({ error: 'Book not found' });
+    const book = await Book.findByPk(req.params.id);
+    if (!book) return res.status(404).json({ error: 'Book not found' });
+    const author_id = book.author_id;
+    await book.destroy();
+    await delCache(['authors-overview', `author-${author_id}`]);
     res.json({ message: 'Book deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });

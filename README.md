@@ -80,6 +80,33 @@ docker compose up --build
 
 ---
 
+## Caching Implementation (Redis)
+
+To optimize read-heavy and computationally expensive results, the application implements an optional **read-acceleration tier** powered by **Redis**.
+
+The caching layer is strictly optional; the application fulfills the "runs without it" constraint and falls back to normal database queries if the cache is disabled or unavailable.
+
+### Cached Resources
+The following resource-intensive data is cached and retrieved instantly:
+- **Authors Overview Table** (Total sales, review counts, average scores per author)
+- **Top 10 Rated Books**
+- **Top 50 Selling Books**
+
+### Cache Invalidation Strategy
+The cache implements robust invalidation logic to prevent stale data. Derived entries are purged when their underlying truth changes:
+- Creating, editing, or deleting a **Review** invalidates the Top 10 rated cache, the authors overview cache, and that specific author's cache (to reflect the new average score).
+- Creating, editing, or deleting a **Sale** invalidates the Top 50 selling cache, the authors overview cache, and that specific author's cache (to reflect the new total sales).
+- Editing or deleting a **Book** or **Author** invalidates the corresponding author's overview cache.
+
+### Running with Cache Enabled
+To run the stack (Application + Database + Cache) using Docker Compose, use the dedicated cache compose file which provisions the Redis container and sets the `USE_CACHE=true` environment variable:
+
+```bash
+docker compose -f docker-compose.cache.yml up --build
+```
+
+---
+
 ## Option 2: Deploy to Kubernetes (Minikube)
 
 The Kubernetes setup utilizes standard manifests located in `k8s/`:
