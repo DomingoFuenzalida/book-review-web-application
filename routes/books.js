@@ -1,8 +1,55 @@
 const express = require('express');
 const router = express.Router();
-const { Book, Author } = require('../models');
+const { Book, Author, Review } = require('../models');
 const { requireAuth } = require('../middleware/auth');
 const { delCache } = require('../utils/cache');
+const { useSearch, searchBooks, syncBookToSearch, deleteBookFromSearch } = require('../utils/search');
+const { Op } = require('sequelize');
+
+// GET /api/books/search (Public)
+router.get('/search', async (req, res) => {
+  try {
+    const { q, page = 1 } = req.query;
+    const perPage = 10;
+    const currentPage = parseInt(page);
+
+    if (useSearch) {
+      const result = await searchBooks(q, currentPage, perPage);
+      if (result) {
+        return res.json({
+          data: result.hits,
+          total: result.total,
+          page: currentPage,
+          per_page: perPage
+        });
+      }
+    }
+
+    // Fallback: DB query LIKE on summary
+    const whereClause = {};
+    if (q && q.trim() !== '') {
+      whereClause.summary = {
+        [Op.like]: `%${q}%`
+      };
+    }
+
+    const { count, rows } = await Book.findAndCountAll({
+      where: whereClause,
+      include: [{ model: Author, attributes: ['id', 'name', 'country'] }],
+      limit: perPage,
+      offset: (currentPage - 1) * perPage
+    });
+
+    res.json({
+      data: rows,
+      total: count,
+      page: currentPage,
+      per_page: perPage
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // GET /api/books (Public)
 router.get('/', async (req, res) => {
@@ -41,6 +88,10 @@ router.post('/', requireAuth, async (req, res) => {
   try {
     const book = await Book.create(req.body);
     await delCache(['authors-overview', `author-${book.author_id}`]);
+    
+    // Sync to search
+    await syncBookToSearch(book, []);
+
     res.status(201).json(book);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -55,6 +106,11 @@ router.put('/:id', requireAuth, async (req, res) => {
 
     await book.update(req.body);
     await delCache(['authors-overview', `author-${book.author_id}`]);
+
+    // Sync to search
+    const reviews = await Review.findAll({ where: { book_id: book.id } });
+    await syncBookToSearch(book, reviews);
+
     res.json(book);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -67,8 +123,13 @@ router.delete('/:id', requireAuth, async (req, res) => {
     const book = await Book.findByPk(req.params.id);
     if (!book) return res.status(404).json({ error: 'Book not found' });
     const author_id = book.author_id;
+    const book_id = book.id;
     await book.destroy();
     await delCache(['authors-overview', `author-${author_id}`]);
+
+    // Sync to search
+    await deleteBookFromSearch(book_id);
+
     res.json({ message: 'Book deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });

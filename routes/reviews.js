@@ -3,8 +3,9 @@ const router = express.Router();
 const { Review, Book } = require('../models');
 const { requireAuth } = require('../middleware/auth');
 const { delCache } = require('../utils/cache');
+const { syncBookToSearch } = require('../utils/search');
 
-// Helper to invalidate cache based on review's book
+// Helper to invalidate cache and update search index based on review's book
 const invalidateReviewCache = async (book_id) => {
   await delCache('top-10-rated');
   await delCache('authors-overview');
@@ -12,6 +13,10 @@ const invalidateReviewCache = async (book_id) => {
     const book = await Book.findByPk(book_id);
     if (book) {
       await delCache(`author-${book.author_id}`);
+      
+      // Update book search index with new reviews
+      const reviews = await Review.findAll({ where: { book_id } });
+      await syncBookToSearch(book, reviews);
     }
   }
 };

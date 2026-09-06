@@ -107,6 +107,39 @@ docker compose -f docker-compose.cache.yml up --build
 
 ---
 
+## Search Engine Implementation (Elasticsearch)
+
+To provide relevance-ranked, full-text search capabilities across books and reviews, the application incorporates **Elasticsearch** as a dedicated search engine.
+
+This layer is also optional; the application adheres to the "runs without it" constraint by transparently falling back to a standard database `LIKE` query on the book summaries if the search engine is disabled.
+
+### Indexed Resources
+The search index (built using `@elastic/elasticsearch`) tracks the following for lightning-fast retrieval:
+- **Books**: Title (`name`) and `summary` text.
+- **Reviews**: Full review text aggregated per book.
+
+Queries against the `/api/books/search` endpoint are routed to Elasticsearch to execute a `multi_match` search across these fields, applying relevance boosting (e.g., matching the title yields a higher score than matching a review).
+
+### Sync and Invalidation Strategy
+To keep the secondary index consistent with the database source of truth:
+- **Book Mutations**: Creating or editing a book immediately synchronizes its document (including its current reviews) to the Elasticsearch index. Deleting a book removes its document from the index.
+- **Review Mutations**: Creating, editing, or deleting a review triggers an update on the parent book's document in Elasticsearch to ensure search queries reflect the latest community feedback.
+
+### Running with Search Engine Enabled
+You have two new Docker Compose configurations to explore these features without Kubernetes:
+
+1. **Application + Database + Search Engine**
+   ```bash
+   docker compose -f docker-compose.search.yml up --build
+   ```
+
+2. **Full Stack (Application + Database + Cache + Search Engine)**
+   ```bash
+   docker compose -f docker-compose.full.yml up --build
+   ```
+
+---
+
 ## Option 2: Deploy to Kubernetes (Minikube)
 
 The Kubernetes setup utilizes standard manifests located in `k8s/`:
