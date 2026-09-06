@@ -6,3 +6,7 @@ data:
   NODE_ENV: "production"
   PORT: "3000"
   DB_STORAGE_PATH: "/app/data/database.sqlite"
+  USE_CACHE: "true"
+  REDIS_URL: "redis://redis-service:6379"
+  USE_SEARCH: "true"
+  ELASTICSEARCH_URL: "http://elasticsearch-service:9200"
