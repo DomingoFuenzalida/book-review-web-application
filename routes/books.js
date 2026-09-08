@@ -87,8 +87,13 @@ router.get('/:id', async (req, res) => {
 router.post('/', requireAuth, async (req, res) => {
   try {
     const book = await Book.create(req.body);
-    await delCache(['authors-overview', `author-${book.author_id}`]);
-    
+    await delCache([
+      'authors-overview',
+      'top-10-rated',
+      'top-50-selling',
+      `author-${book.author_id}`
+    ]);
+
     // Sync to search
     await syncBookToSearch(book, []);
 
@@ -103,9 +108,15 @@ router.put('/:id', requireAuth, async (req, res) => {
   try {
     const book = await Book.findByPk(req.params.id);
     if (!book) return res.status(404).json({ error: 'Book not found' });
-
+    const oldAuthorId = book.author_id;
     await book.update(req.body);
-    await delCache(['authors-overview', `author-${book.author_id}`]);
+    await delCache([
+      'authors-overview',
+      'top-10-rated',
+      'top-50-selling',
+      `author-${oldAuthorId}`,
+      `author-${book.author_id}`
+    ]);
 
     // Sync to search
     const reviews = await Review.findAll({ where: { book_id: book.id } });
@@ -125,7 +136,12 @@ router.delete('/:id', requireAuth, async (req, res) => {
     const author_id = book.author_id;
     const book_id = book.id;
     await book.destroy();
-    await delCache(['authors-overview', `author-${author_id}`]);
+    await delCache([
+      'authors-overview',
+      'top-10-rated',
+      'top-50-selling',
+      `author-${author_id}`
+    ]);
 
     // Sync to search
     await deleteBookFromSearch(book_id);
