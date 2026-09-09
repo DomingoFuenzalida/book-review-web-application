@@ -21,6 +21,14 @@ const invalidateReviewCache = async (book_id) => {
   }
 };
 
+const syncBookReviews = async (book_id) => {
+  if (!book_id) return;
+  const book = await Book.findByPk(book_id);
+  if (!book) return;
+  const reviews = await Review.findAll({ where: { book_id } });
+  await syncBookToSearch(book, reviews);
+};
+
 // GET /api/reviews (Public Read)
 router.get('/', async (req, res) => {
   try {
@@ -86,8 +94,12 @@ router.put('/:id', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden: You do not own this review' });
     }
 
+    const oldBookId = review.book_id;
     await review.update(req.body);
     await invalidateReviewCache(review.book_id);
+    if (oldBookId !== review.book_id) {
+      await syncBookReviews(oldBookId);
+    }
     res.json(review);
   } catch (err) {
     res.status(400).json({ error: err.message });

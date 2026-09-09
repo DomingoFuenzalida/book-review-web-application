@@ -2,6 +2,20 @@ const { Client } = require('@elastic/elasticsearch');
 
 const useSearch = process.env.USE_SEARCH === 'true';
 
+const syncAllBooksToSearch = async () => {
+  if (!useSearch || !client) return;
+
+  const { Book, Review } = require('../models');
+  const books = await Book.findAll();
+
+  for (const book of books) {
+    const reviews = await Review.findAll({
+      where: { book_id: book.id }
+    });
+    await syncBookToSearch(book, reviews);
+  }
+};
+
 let client = null;
 if (useSearch) {
   client = new Client({
@@ -18,18 +32,28 @@ const INDEX_NAME = 'books';
 const initIndex = async () => {
   if (!useSearch || !client) return;
   try {
+    await client.ping();
     const exists = await client.indices.exists({ index: INDEX_NAME });
     if (!exists) {
       await client.indices.create({ index: INDEX_NAME });
     }
+    return true;
   } catch (err) {
     console.error('Error initializing Elasticsearch index', err);
+    return false;
   }
 };
 
-if (useSearch) {
-  setTimeout(initIndex, 5000); // Wait for ES to be up
-}
+const initializeSearch = async () => {
+  if (!useSearch || !client) return false;
+
+  for (let attempt = 1; attempt <= 10; attempt++) {
+    if (await initIndex()) return true;
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+
+  return false;
+};
 
 const syncBookToSearch = async (book, reviews = []) => {
   if (!useSearch || !client) return;
@@ -37,6 +61,7 @@ const syncBookToSearch = async (book, reviews = []) => {
     await client.index({
       index: INDEX_NAME,
       id: book.id.toString(),
+      refresh: 'wait_for',
       document: {
         name: book.name,
         summary: book.summary,
@@ -67,28 +92,42 @@ const searchBooks = async (query, page = 1, perPage = 10) => {
   try {
     const from = (page - 1) * perPage;
     
-    let esQuery = { match_all: {} };
-    if (query && query.trim() !== '') {
-      esQuery = {
-        multi_match: {
-          query: query,
-          fields: ['name^3', 'summary^2', 'reviews']
+    const esQuery = query && query.trim() !== ''
+      ? {
+          multi_match: {
+            query: query.trim(),
+            fields: ['reviews^4', 'name^3', 'summary^2']
+          }
         }
-      };
-    }
+      : { match_all: {} };
 
     const result = await client.search({
       index: INDEX_NAME,
       from,
       size: perPage,
-      query: esQuery
+      query: esQuery,
+      ...(query && query.trim() !== '' ? {
+        highlight: {
+          pre_tags: ['<mark>'],
+          post_tags: ['</mark>'],
+          fields: {
+            reviews: {
+              number_of_fragments: 3,
+              fragment_size: 180
+            },
+            name: {},
+            summary: {}
+          }
+        }
+      } : {})
     });
 
     const total = result.hits.total.value;
     const hits = result.hits.hits.map(hit => ({
       id: parseInt(hit._id),
       score: hit._score,
-      ...hit._source
+      ...hit._source,
+      matchedReviews: hit.highlight?.reviews || []
     }));
 
     return { total, hits };
@@ -100,7 +139,9 @@ const searchBooks = async (query, page = 1, perPage = 10) => {
 
 module.exports = {
   useSearch,
+  initializeSearch,
   syncBookToSearch,
+  syncAllBooksToSearch,
   deleteBookFromSearch,
   searchBooks
 };

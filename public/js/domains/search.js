@@ -19,7 +19,7 @@ export const SearchViews = {
       <div class="mb-8 bg-blue-50 border border-blue-100 p-8 rounded-lg text-center">
         <h2 class="text-3xl font-semibold tracking-tight text-blue-900 mb-3">Search Books</h2>
         <p class="text-blue-700 text-sm mb-6 max-w-xl mx-auto">
-          Type any words below. The system will return a paginated, relevance-ranked list of books matching the words (on title, summary or their reviews).
+          Type any words below. The system will return a paginated, relevance-ranked list of books matching the words.
         </p>
         <div class="max-w-2xl mx-auto flex gap-2">
           <input type="text" id="summary-search-input" placeholder="e.g. magic dragon mystery..." class="w-full border border-slate-300 rounded-md p-3 text-base focus:outline-none focus:border-blue-500 shadow-sm">
@@ -97,6 +97,18 @@ export const SearchViews = {
             <p class="text-slate-700 text-sm mt-3 border-l-4 border-blue-200 pl-3 bg-slate-50 py-2 pr-2 italic">
               ${b.summary || 'No summary available.'}
             </p>
+            ${b.matchedReviews?.length ? `
+              <div class="mt-4 border-t border-slate-200 pt-3">
+                <p class="text-xs font-semibold text-slate-500 mb-2">Matching Reviews</p>
+                <ul class="space-y-2">
+                  ${b.matchedReviews.map(review => `
+                    <li class="text-sm text-slate-600 italic">
+                      "${review}"
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
           </div>
         `).join('')}
       </div>

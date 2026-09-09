@@ -3,7 +3,7 @@ const path = require('path');
 const { sequelize, User, Author } = require('./models');
 const { authenticate } = require('./middleware/auth');
 const seedDatabase = require('./seed');
-
+const { initializeSearch, syncAllBooksToSearch } = require('./utils/search');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -39,7 +39,16 @@ async function startServer() {
     } else {
       console.log('Database already populated. Skipping auto-seed.');
     }
-
+    initializeSearch().then(async (initialized) => {
+      if (initialized) {
+        await syncAllBooksToSearch();
+        console.log('Elasticsearch books index synchronized.');
+      } else {
+        console.error('Elasticsearch unavailable; search indexing skipped for this startup.');
+      }
+    }).catch(error => {
+      console.error('Elasticsearch synchronization failed:', error);
+    });
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running at http://0.0.0.0:${PORT}`);
     });

@@ -27,29 +27,34 @@ router.get('/search', async (req, res) => {
 
     // Fallback: DB query LIKE on summary
     const whereClause = {};
+
     if (q && q.trim() !== '') {
       whereClause.summary = {
-        [Op.like]: `%${q}%`
+        [Op.like]: `%${q.trim()}%`
       };
     }
 
     const { count, rows } = await Book.findAndCountAll({
       where: whereClause,
-      include: [{ model: Author, attributes: ['id', 'name', 'country'] }],
+      include: [
+        { model: Author, attributes: ['id', 'name', 'country'] },
+        { model: Review, attributes: [], required: false }
+      ],
+      distinct: true,
       limit: perPage,
       offset: (currentPage - 1) * perPage
     });
 
-    res.json({
-      data: rows,
-      total: count,
-      page: currentPage,
-      per_page: perPage
+        res.json({
+          data: rows,
+          total: count,
+          page: currentPage,
+          per_page: perPage
+        });
+      } catch (err) {
+        res.status(500).json({ error: err.message });
+      }
     });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // GET /api/books (Public)
 router.get('/', async (req, res) => {

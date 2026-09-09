@@ -6,10 +6,22 @@
   <title>Library Management</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-    .nav-link.active { font-weight: 600; border-bottom: 2px solid #1e293b; color: #1e293b; }
-  </style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  .nav-link.active {
+    font-weight: 600;
+    border-bottom: 2px solid #1e293b;
+    color: #1e293b;
+  }
+
+  mark {
+    background-color: #fef08a;
+    color: inherit;
+    padding: 0 2px;
+  }
+</style>
 </head>
 <body class="bg-gray-50 text-slate-800 min-h-screen flex flex-col">
 
@@ -21,7 +33,7 @@
         <nav class="hidden sm:flex gap-6" id="main-nav">
           <a href="#/authors" class="nav-link pb-1 text-sm text-slate-500 hover:text-slate-900 transition-colors active">Authors</a>
           <a href="#/books" class="nav-link pb-1 text-sm text-slate-500 hover:text-slate-900 transition-colors">Books</a>
-          <a href="#/search" class="nav-link pb-1 text-sm text-slate-500 hover:text-slate-900 transition-colors">Search Book by Summary</a>
+          <a href="#/search" class="nav-link pb-1 text-sm text-slate-500 hover:text-slate-900 transition-colors">Search Engine</a>
           <a href="#/reports" class="nav-link pb-1 text-sm text-slate-500 hover:text-slate-900 transition-colors">Top Rated Books</a>
           <a href="#/users" id="nav-users-link" class="hidden nav-link pb-1 text-sm text-slate-500 hover:text-slate-900 transition-colors">Users</a>
         </nav>
