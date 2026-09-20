@@ -140,6 +140,46 @@ You have two new Docker Compose configurations to explore these features without
 
 ---
 
+## Reverse Proxy & Horizontal Scaling (Varnish + Hitch)
+
+To emulate a production-grade edge tier and achieve horizontal scalability, the application is deployed behind a reverse proxy that acts as a Load Balancer, TLS terminator, and Content Delivery Network (CDN) for static assets.
+
+Since our group was assigned **Varnish**, and Varnish natively only speaks HTTP, we paired it with **Hitch** (the official TLS proxy for Varnish) to handle HTTPS termination with a self-signed certificate (`app.localhost`).
+
+### Static Assets (Edge CDN)
+The application allows uploading cover images for Books and profile images for Authors.
+- Images are stored in a shared Docker volume (`uploads_data`) so they are accessible to all horizontal application replicas.
+- When `USE_PROXY=true` is set, the Node.js application stops serving static files directly. Instead, Varnish intercepts all requests to `/uploads/*`, `/js/*`, and `/css/*` and serves them from its cache, drastically reducing load on the Node.js processes.
+
+### Load Balancing & Statelessness
+Because the application authenticates users statelessly via a signed token/header and stores uploaded images in a shared volume, any instance can safely serve any request.
+The scaled deployment runs 3 identical instances of the Node.js API (`api1`, `api2`, `api3`). Varnish acts as a **Round-Robin Load Balancer**, distributing incoming traffic equally across all 3 instances.
+
+### How to Run the New Topologies
+
+1. **Single Instance + Proxy**
+   Runs the App + Database + Varnish + Hitch.
+   ```bash
+   docker compose -f docker-compose.proxy.yml up --build
+   ```
+
+2. **Single Instance + Proxy + Cache + Search**
+   Runs the complete feature set but with a single API instance.
+   ```bash
+   docker compose -f docker-compose.proxy-full.yml up --build
+   ```
+
+3. **Horizontally Scaled (x3) + Proxy + Cache + Search**
+   Runs the full load-balanced architecture.
+   ```bash
+   docker compose -f docker-compose.scale.yml up --build
+   ```
+
+**Accessing the Application over HTTPS:**
+Once deployed, the application will be available securely at **`https://localhost`** (or `https://app.localhost` if you update your `/etc/hosts`). You will need to accept the self-signed certificate warning in your browser.
+
+---
+
 ## Option 2: Deploy to Kubernetes (Minikube)
 
 The Kubernetes setup utilizes standard manifests located in `k8s/`:

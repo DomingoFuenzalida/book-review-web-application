@@ -216,29 +216,34 @@ export const AuthorViews = {
       
       <!-- Vista de Lectura -->
       <div id="author-view-mode" class="mb-10">
-        <h2 class="text-3xl font-semibold tracking-tight text-slate-900 mb-1">${author.name}</h2>
-        <div class="text-sm text-slate-500 mb-6 flex gap-4">
-          <span>Born: ${author.birth_date || 'Unknown'}</span>
-          <span>Location: ${author.country || 'Unknown'}</span>
-        </div>
+        <div class="flex flex-col sm:flex-row gap-6">
+          ${author.image ? `<img src="${author.image}" class="w-32 h-32 object-cover rounded-full shadow-sm" alt="Author image">` : '<div class="w-32 h-32 bg-slate-200 rounded-full flex items-center justify-center text-slate-400">No Image</div>'}
+          <div class="flex-1">
+            <h2 class="text-3xl font-semibold tracking-tight text-slate-900 mb-1">${author.name}</h2>
+            <div class="text-sm text-slate-500 mb-6 flex gap-4">
+              <span>Born: ${author.birth_date || 'Unknown'}</span>
+              <span>Location: ${author.country || 'Unknown'}</span>
+            </div>
 
-        <!-- Tarjetas de Estadísticas del Autor -->
-        <div class="grid grid-cols-3 gap-4 mb-8">
-          <div class="bg-white p-4 rounded-md shadow-sm border border-slate-200 text-center">
-            <span class="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Published Books</span>
-            <span class="text-2xl font-semibold text-slate-800">${author.books_count || 0}</span>
-          </div>
-          <div class="bg-white p-4 rounded-md shadow-sm border border-slate-200 text-center">
-            <span class="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Avg Score</span>
-            <span class="text-2xl font-semibold text-blue-600">${parseFloat(author.average_score || 0).toFixed(2)}</span>
-          </div>
-          <div class="bg-white p-4 rounded-md shadow-sm border border-slate-200 text-center">
-            <span class="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total Sales</span>
-            <span class="text-2xl font-semibold text-emerald-600">${Number(author.total_sales || 0).toLocaleString()}</span>
+            <!-- Tarjetas de Estadísticas del Autor -->
+            <div class="grid grid-cols-3 gap-4 mb-8">
+              <div class="bg-white p-4 rounded-md shadow-sm border border-slate-200 text-center">
+                <span class="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Published Books</span>
+                <span class="text-2xl font-semibold text-slate-800">${author.books_count || 0}</span>
+              </div>
+              <div class="bg-white p-4 rounded-md shadow-sm border border-slate-200 text-center">
+                <span class="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Avg Score</span>
+                <span class="text-2xl font-semibold text-blue-600">${parseFloat(author.average_score || 0).toFixed(2)}</span>
+              </div>
+              <div class="bg-white p-4 rounded-md shadow-sm border border-slate-200 text-center">
+                <span class="block text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total Sales</span>
+                <span class="text-2xl font-semibold text-emerald-600">${Number(author.total_sales || 0).toLocaleString()}</span>
+              </div>
+            </div>
+
+            <p class="text-slate-700 leading-relaxed max-w-3xl">${author.description || 'No biography available.'}</p>
           </div>
         </div>
-
-        <p class="text-slate-700 leading-relaxed max-w-3xl">${author.description || 'No biography available.'}</p>
       </div>
 
       <!-- Vista de Edición (Oculta) -->
@@ -249,6 +254,7 @@ export const AuthorViews = {
           <div><label class="text-xs text-slate-500">Name</label><input type="text" id="edit-author-name" value="${author.name}" class="w-full border border-slate-300 rounded p-2 text-sm mt-1 focus:outline-none focus:border-slate-500"></div>
           <div><label class="text-xs text-slate-500">Birth Date</label><input type="date" id="edit-author-dob" value="${author.birth_date}" class="w-full border border-slate-300 rounded p-2 text-sm mt-1 focus:outline-none focus:border-slate-500"></div>
           <div><label class="text-xs text-slate-500">Country</label><input type="text" id="edit-author-country" value="${author.country || ''}" class="w-full border border-slate-300 rounded p-2 text-sm mt-1 focus:outline-none focus:border-slate-500"></div>
+          <div><label class="text-xs text-slate-500">Image</label><input type="file" id="edit-author-image" accept="image/*" class="w-full border border-slate-300 rounded p-1 text-sm mt-1 focus:outline-none focus:border-slate-500 bg-white"></div>
         </div>
         <div><label class="text-xs text-slate-500">Description</label><textarea id="edit-author-desc" rows="4" class="w-full border border-slate-300 rounded p-2 text-sm mt-1 mb-4 focus:outline-none focus:border-slate-500">${author.description || ''}</textarea></div>
         <div class="flex gap-2 justify-end">
@@ -293,13 +299,18 @@ export const AuthorViews = {
       };
 
       document.getElementById('btn-save-edit').onclick = async () => {
-        const payload = {
-          name: document.getElementById('edit-author-name').value,
-          birth_date: document.getElementById('edit-author-dob').value,
-          country: document.getElementById('edit-author-country').value,
-          description: document.getElementById('edit-author-desc').value
-        };
-        const res = await API.request(`/authors/${id}`, 'PUT', payload);
+        const formData = new FormData();
+        formData.append('name', document.getElementById('edit-author-name').value);
+        formData.append('birth_date', document.getElementById('edit-author-dob').value);
+        formData.append('country', document.getElementById('edit-author-country').value);
+        formData.append('description', document.getElementById('edit-author-desc').value);
+        
+        const fileInput = document.getElementById('edit-author-image');
+        if (fileInput.files.length > 0) {
+          formData.append('image', fileInput.files[0]);
+        }
+
+        const res = await API.request(`/authors/${id}`, 'PUT', formData, true);
         if (res) this.renderDetail(container, id); 
         else alert('Error updating author');
       };

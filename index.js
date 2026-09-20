@@ -9,7 +9,14 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+
+if (process.env.USE_PROXY !== 'true') {
+  app.use(express.static(path.join(__dirname, 'public')));
+  app.use('/uploads', express.static(process.env.STORAGE_PATH || path.join(__dirname, 'public/uploads')));
+} else {
+  // Only serve API, static files should be served by proxy
+  app.get('/', (req, res) => res.send('API is running. Static files are served by the proxy.'));
+}
 
 // Global Auth Header Middleware
 app.use(authenticate);
@@ -27,18 +34,8 @@ async function startServer() {
   try {
     await sequelize.authenticate();
     // Sync schemas automatically
-    await sequelize.sync({ alter: true });
+    await sequelize.sync();
 
-    // Check if seeding is needed
-    const userCount = await User.count();
-    const authorCount = await Author.count();
-
-    if (userCount === 0 || authorCount === 0) {
-      console.log('Database empty. Running automatic seed on boot...');
-      await seedDatabase();
-    } else {
-      console.log('Database already populated. Skipping auto-seed.');
-    }
     initializeSearch().then(async (initialized) => {
       if (initialized) {
         await syncAllBooksToSearch();

@@ -11,4 +11,4 @@ RUN mkdir -p data
 
 EXPOSE 3000
 
-CMD ["node", "index.js"]
+CMD ["sh", "-c", "node sync-db.js && node index.js"]

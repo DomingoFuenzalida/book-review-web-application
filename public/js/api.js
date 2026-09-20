@@ -35,9 +35,15 @@ export const API = {
     return headers;
   },
 
-  async request(endpoint, method = 'GET', body = null) {
-    const options = { method, headers: this.getHeaders() };
-    if (body) options.body = JSON.stringify(body);
+  async request(endpoint, method = 'GET', body = null, isFormData = false) {
+    const headers = {};
+    if (currentUser) headers['x-user-id'] = currentUser.id;
+    if (!isFormData) headers['Content-Type'] = 'application/json';
+
+    const options = { method, headers };
+    if (body) {
+      options.body = isFormData ? body : JSON.stringify(body);
+    }
     
     try {
       const res = await fetch(`/api${endpoint}`, options);

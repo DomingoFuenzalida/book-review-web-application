@@ -10,6 +10,10 @@ const Book = sequelize.define('Book', {
     type: DataTypes.TEXT,
     allowNull: true
   },
+  cover_image: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   date_of_publish: {
     type: DataTypes.DATEONLY,
     allowNull: true

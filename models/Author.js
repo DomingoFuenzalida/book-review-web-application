@@ -14,6 +14,10 @@ const Author = sequelize.define('Author', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  image: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   description: {
     type: DataTypes.TEXT,
     allowNull: true

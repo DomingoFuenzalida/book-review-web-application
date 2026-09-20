@@ -1,0 +1,88 @@
+version: '3.8'
+
+x-api-base: &api-base
+  build: .
+  volumes:
+    - .:/app
+    - /app/node_modules
+    - ./data:/app/data
+    - uploads_data:/app/public/uploads
+  environment:
+    - NODE_ENV=development
+    - USE_PROXY=true
+    - STORAGE_PATH=/app/public/uploads
+    - USE_CACHE=true
+    - REDIS_URL=redis://redis:6379
+    - USE_SEARCH=true
+    - ELASTICSEARCH_URL=http://elasticsearch:9200
+  depends_on:
+    api-init:
+      condition: service_completed_successfully
+    redis:
+      condition: service_started
+    elasticsearch:
+      condition: service_started
+
+services:
+  api-init:
+    build: .
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=development
+    command: node sync-db.js
+
+  api1:
+    <<: *api-base
+    command: node index.js
+
+  api2:
+    <<: *api-base
+    command: node index.js
+
+  api3:
+    <<: *api-base
+    command: node index.js
+
+  redis:
+    image: "redis:alpine"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.1
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+  static:
+    image: nginx:alpine
+    volumes:
+      - ./public:/usr/share/nginx/html
+      - uploads_data:/usr/share/nginx/html/uploads
+
+  varnish:
+    image: varnish:7.3
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/varnish-scale.vcl:/etc/varnish/default.vcl
+    depends_on:
+      - api1
+      - api2
+      - api3
+      - static
+
+  hitch:
+    image: hitch:1.7
+    ports:
+      - "443:443"
+    volumes:
+      - ./config/hitch.conf:/etc/hitch/hitch.conf
+      - ./config/app.pem:/etc/hitch/certs/app.pem
+    depends_on:
+      - varnish
+
+volumes:
+  uploads_data:

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { Book, Author, Review } = require('../models');
 const { requireAuth } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 const { delCache } = require('../utils/cache');
 const { useSearch, searchBooks, syncBookToSearch, deleteBookFromSearch } = require('../utils/search');
 const { Op } = require('sequelize');
@@ -89,9 +90,13 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/books (Requires Auth)
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, upload.single('cover_image'), async (req, res) => {
   try {
-    const book = await Book.create(req.body);
+    const data = { ...req.body };
+    if (req.file) {
+      data.cover_image = `/uploads/${req.file.filename}`;
+    }
+    const book = await Book.create(data);
     await delCache([
       'authors-overview',
       'top-10-rated',
@@ -109,12 +114,18 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // PUT /api/books/:id (Requires Auth)
-router.put('/:id', requireAuth, async (req, res) => {
+router.put('/:id', requireAuth, upload.single('cover_image'), async (req, res) => {
   try {
     const book = await Book.findByPk(req.params.id);
     if (!book) return res.status(404).json({ error: 'Book not found' });
     const oldAuthorId = book.author_id;
-    await book.update(req.body);
+    
+    const data = { ...req.body };
+    if (req.file) {
+      data.cover_image = `/uploads/${req.file.filename}`;
+    }
+    
+    await book.update(data);
     await delCache([
       'authors-overview',
       'top-10-rated',

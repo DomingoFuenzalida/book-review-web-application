@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { Author, Book, Review, SaleByYear } = require('../models');
 const { requireAuth } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 const { getCache, setCache, delCache } = require('../utils/cache');
 
 const processAuthorStats = (author) => {
@@ -88,9 +89,13 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/authors (Requires Auth)
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, upload.single('image'), async (req, res) => {
   try {
-    const author = await Author.create(req.body);
+    const data = { ...req.body };
+    if (req.file) {
+      data.image = `/uploads/${req.file.filename}`;
+    }
+    const author = await Author.create(data);
     await delCache('authors-overview');
     res.status(201).json(author);
   } catch (err) {
@@ -99,12 +104,17 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // PUT /api/authors/:id (Requires Auth)
-router.put('/:id', requireAuth, async (req, res) => {
+router.put('/:id', requireAuth, upload.single('image'), async (req, res) => {
   try {
     const author = await Author.findByPk(req.params.id);
     if (!author) return res.status(404).json({ error: 'Author not found' });
 
-    await author.update(req.body);
+    const data = { ...req.body };
+    if (req.file) {
+      data.image = `/uploads/${req.file.filename}`;
+    }
+
+    await author.update(data);
     await delCache(['authors-overview', `author-${req.params.id}`]);
     res.json(author);
   } catch (err) {

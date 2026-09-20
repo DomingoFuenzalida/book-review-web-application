@@ -188,13 +188,16 @@ export const BookViews = {
       </div>
       
       <!-- Vista de Lectura -->
-      <div id="book-view-mode" class="mb-10 bg-slate-50 border border-slate-100 p-6 rounded-md">
-        <h2 class="text-2xl font-semibold tracking-tight text-slate-900 mb-2">${book.name}</h2>
-        <div class="text-sm text-slate-600 mb-4 flex gap-4">
-          <span>Author: <a href="#/authors/${book.author_id}" class="text-slate-900 underline font-medium">${book.Author ? book.Author.name : book.author_id}</a></span>
-          <span>Published: ${book.date_of_publish || 'Unknown'}</span>
+      <div id="book-view-mode" class="mb-10 bg-slate-50 border border-slate-100 p-6 rounded-md flex flex-col sm:flex-row gap-6">
+        ${book.cover_image ? `<img src="${book.cover_image}" class="w-32 h-48 object-cover rounded shadow-sm" alt="Book cover">` : '<div class="w-32 h-48 bg-slate-200 rounded flex items-center justify-center text-slate-400 text-sm text-center px-2">No Cover</div>'}
+        <div class="flex-1">
+          <h2 class="text-2xl font-semibold tracking-tight text-slate-900 mb-2">${book.name}</h2>
+          <div class="text-sm text-slate-600 mb-4 flex gap-4">
+            <span>Author: <a href="#/authors/${book.author_id}" class="text-slate-900 underline font-medium">${book.Author ? book.Author.name : book.author_id}</a></span>
+            <span>Published: ${book.date_of_publish || 'Unknown'}</span>
+          </div>
+          <p class="text-slate-700 text-sm leading-relaxed">${book.summary || 'No summary available.'}</p>
         </div>
-        <p class="text-slate-700 text-sm leading-relaxed">${book.summary || 'No summary available.'}</p>
       </div>
 
       <!-- Vista de Edición (Oculta, Solo Admins) -->
@@ -205,6 +208,7 @@ export const BookViews = {
           <div><label class="text-xs text-slate-500">Title</label><input type="text" id="edit-book-name" value="${book.name}" class="w-full border border-slate-300 rounded p-2 text-sm mt-1 focus:outline-none focus:border-slate-500"></div>
           <div><label class="text-xs text-slate-500">Author ID</label><input type="number" id="edit-book-author-id" value="${book.author_id}" class="w-full border border-slate-300 rounded p-2 text-sm mt-1 focus:outline-none focus:border-slate-500"></div>
           <div><label class="text-xs text-slate-500">Publish Date</label><input type="date" id="edit-book-date" value="${book.date_of_publish}" class="w-full border border-slate-300 rounded p-2 text-sm mt-1 focus:outline-none focus:border-slate-500"></div>
+          <div><label class="text-xs text-slate-500">Cover Image</label><input type="file" id="edit-book-cover" accept="image/*" class="w-full border border-slate-300 rounded p-1 text-sm mt-1 focus:outline-none focus:border-slate-500 bg-white"></div>
         </div>
         <div><label class="text-xs text-slate-500">Summary</label><textarea id="edit-book-summary" rows="4" class="w-full border border-slate-300 rounded p-2 text-sm mt-1 mb-4 focus:outline-none focus:border-slate-500">${book.summary || ''}</textarea></div>
         <div class="flex gap-2 justify-end">
@@ -226,12 +230,12 @@ export const BookViews = {
           <textarea id="new-review-text" rows="3" class="w-full border border-slate-300 rounded p-2 text-sm mb-3 focus:outline-none focus:border-slate-500" placeholder="What did you think about this book?"></textarea>
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <label class="text-sm text-slate-600">Score (1-5):</label>
-              <input type="number" id="new-review-score" min="1" max="5" class="border border-slate-300 rounded p-1 text-sm w-16 focus:outline-none focus:border-slate-500">
+              <label class="text-xs text-slate-600 font-medium">Score (1-5):</label>
+              <input type="number" id="new-review-score" min="1" max="5" value="5" class="w-16 border border-slate-300 rounded p-1 text-sm focus:outline-none focus:border-slate-500 text-center">
             </div>
             <div class="flex gap-2">
-              <button id="btn-cancel-review" class="text-slate-500 text-sm px-3 py-1 hover:text-slate-800 transition-colors">Cancel</button>
-              <button id="btn-submit-review" class="bg-slate-800 text-white px-4 py-1.5 text-sm rounded hover:bg-slate-700 transition-colors">Submit</button>
+              <button id="btn-cancel-review" class="text-slate-600 text-sm px-3 py-1.5 hover:bg-slate-100 rounded transition-colors">Cancel</button>
+              <button id="btn-submit-review" class="bg-slate-900 text-white px-4 py-1.5 text-sm rounded hover:bg-slate-800 transition-colors">Submit Review</button>
             </div>
           </div>
         </div>
@@ -255,13 +259,18 @@ export const BookViews = {
       };
 
       document.getElementById('btn-save-edit-book').onclick = async () => {
-        const payload = {
-          name: document.getElementById('edit-book-name').value,
-          author_id: parseInt(document.getElementById('edit-book-author-id').value),
-          date_of_publish: document.getElementById('edit-book-date').value,
-          summary: document.getElementById('edit-book-summary').value
-        };
-        const res = await API.request(`/books/${id}`, 'PUT', payload);
+        const formData = new FormData();
+        formData.append('name', document.getElementById('edit-book-name').value);
+        formData.append('author_id', parseInt(document.getElementById('edit-book-author-id').value));
+        formData.append('date_of_publish', document.getElementById('edit-book-date').value);
+        formData.append('summary', document.getElementById('edit-book-summary').value);
+        
+        const fileInput = document.getElementById('edit-book-cover');
+        if (fileInput.files.length > 0) {
+          formData.append('cover_image', fileInput.files[0]);
+        }
+
+        const res = await API.request(`/books/${id}`, 'PUT', formData, true);
         if (res) this.renderDetail(container, id);
         else alert('Error updating book');
       };
