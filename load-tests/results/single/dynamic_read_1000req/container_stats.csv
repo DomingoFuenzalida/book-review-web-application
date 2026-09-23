@@ -245,3 +245,9 @@ timestamp,container,cpu_percent,mem_usage,pids_threads
 2026-09-23T00:37:33Z,book-review-web-application-static-1,0.00%,10.26MiB / 30.91GiB,13
 2026-09-23T00:37:33Z,book-review-web-application-elasticsearch-1,0.32%,950.4MiB / 30.91GiB,117
 2026-09-23T00:37:33Z,forms_app-db-1,0.38%,378.3MiB / 30.91GiB,37
+2026-09-23T02:02:02Z,book-review-web-application-hitch-1,9.41%,8.707MiB / 15.57GiB,2
+2026-09-23T02:02:02Z,book-review-web-application-varnish-1,23.01%,65.27MiB / 15.57GiB,217
+2026-09-23T02:02:02Z,book-review-web-application-api-1,147.30%,366.9MiB / 15.57GiB,11
+2026-09-23T02:02:02Z,book-review-web-application-static-1,0.00%,12.78MiB / 15.57GiB,17
+2026-09-23T02:02:02Z,book-review-web-application-redis-1,0.13%,6.27MiB / 15.57GiB,6
+2026-09-23T02:02:02Z,book-review-web-application-elasticsearch-1,2.36%,1.276GiB / 15.57GiB,179

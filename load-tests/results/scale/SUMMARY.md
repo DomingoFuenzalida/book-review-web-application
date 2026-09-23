@@ -2,23 +2,23 @@
 
 | Endpoint | Tier | Requests | Throughput (req/s) | Mean Latency (ms) | p95 (ms) | p99 (ms) | Errors | Avg CPU (%) |
 |---|---|---|---|---|---|---|---|---|
-| Cheap Dynamic Read (Single Book Detail) | Baseline App + Database | 1 | 33.33 | 28.47 | 28.47 | 28.47 | 0 | 1.1 |
-| Cheap Dynamic Read (Single Book Detail) | Baseline App + Database | 10 | 263.16 | 11.22 | 34.29 | 34.29 | 0 | 0.9 |
-| Cheap Dynamic Read (Single Book Detail) | Baseline App + Database | 100 | 1086.96 | 7.09 | 19.70 | 37.02 | 0 | 2.6 |
-| Cheap Dynamic Read (Single Book Detail) | Baseline App + Database | 1000 | 1709.40 | 13.97 | 27.96 | 39.81 | 0 | 31.1 |
-| Cheap Dynamic Read (Single Book Detail) | Baseline App + Database | 5000 | 2076.41 | 23.70 | 53.20 | 70.82 | 0 | 33.4 |
-| Expensive Aggregation (Top 50 Selling) | Node.js CPU + SQLite + Redis Cache | 1 | 0.47 | 2111.76 | 2111.76 | 2111.76 | 0 | 9.1 |
-| Expensive Aggregation (Top 50 Selling) | Node.js CPU + SQLite + Redis Cache | 10 | 294.12 | 9.17 | 31.01 | 31.01 | 0 | 1.4 |
-| Expensive Aggregation (Top 50 Selling) | Node.js CPU + SQLite + Redis Cache | 100 | 1052.63 | 6.98 | 31.95 | 52.86 | 0 | 2.5 |
-| Expensive Aggregation (Top 50 Selling) | Node.js CPU + SQLite + Redis Cache | 1000 | 3787.88 | 6.04 | 10.93 | 35.25 | 0 | 12.3 |
-| Expensive Aggregation (Top 50 Selling) | Node.js CPU + SQLite + Redis Cache | 5000 | 4757.37 | 10.19 | 18.30 | 43.95 | 0 | 58.5 |
-| Search Engine Query | Elasticsearch Engine | 1 | 9.71 | 102.73 | 102.73 | 102.73 | 0 | 1.7 |
-| Search Engine Query | Elasticsearch Engine | 10 | 166.67 | 21.91 | 44.85 | 44.85 | 0 | 2.5 |
-| Search Engine Query | Elasticsearch Engine | 100 | 529.10 | 16.92 | 30.91 | 47.74 | 0 | 16.9 |
-| Search Engine Query | Elasticsearch Engine | 1000 | 813.67 | 29.82 | 52.38 | 78.25 | 0 | 108.8 |
-| Search Engine Query | Elasticsearch Engine | 5000 | 1342.64 | 36.85 | 67.94 | 89.72 | 0 | 72.5 |
-| Static Asset (Edge / Varnish CDN) | Reverse Proxy / Edge | 1 | 35.71 | 27.66 | 27.66 | 27.66 | 0 | 32.5 |
-| Static Asset (Edge / Varnish CDN) | Reverse Proxy / Edge | 10 | 270.27 | 8.82 | 33.24 | 33.24 | 0 | 41.8 |
-| Static Asset (Edge / Varnish CDN) | Reverse Proxy / Edge | 100 | 1666.67 | 4.00 | 20.79 | 37.28 | 0 | 16.5 |
-| Static Asset (Edge / Varnish CDN) | Reverse Proxy / Edge | 1000 | 5524.86 | 3.99 | 6.18 | 29.70 | 0 | 2.0 |
-| Static Asset (Edge / Varnish CDN) | Reverse Proxy / Edge | 5000 | 7320.64 | 6.55 | 10.39 | 35.71 | 0 | 11.2 |
+| Cheap Dynamic Read (Single Book Detail) | Baseline App + Database | 1 | 40.00 | 23.97 | 23.97 | 23.97 | 0 | 1.3 |
+| Cheap Dynamic Read (Single Book Detail) | Baseline App + Database | 10 | 263.16 | 13.61 | 31.85 | 31.85 | 0 | 1.1 |
+| Cheap Dynamic Read (Single Book Detail) | Baseline App + Database | 100 | 757.58 | 11.55 | 33.37 | 45.35 | 0 | 4.7 |
+| Cheap Dynamic Read (Single Book Detail) | Baseline App + Database | 1000 | 1269.04 | 18.99 | 33.33 | 52.29 | 0 | 40.6 |
+| Cheap Dynamic Read (Single Book Detail) | Baseline App + Database | 5000 | 1474.06 | 33.47 | 88.26 | 111.82 | 0 | 36.9 |
+| Expensive Aggregation (Top 50 Selling) | Node.js CPU + SQLite + Redis Cache | 1 | 0.35 | 2881.26 | 2881.26 | 2881.26 | 0 | 8.4 |
+| Expensive Aggregation (Top 50 Selling) | Node.js CPU + SQLite + Redis Cache | 10 | 344.83 | 10.06 | 25.10 | 25.10 | 0 | 1.6 |
+| Expensive Aggregation (Top 50 Selling) | Node.js CPU + SQLite + Redis Cache | 100 | 1388.89 | 5.96 | 24.41 | 33.38 | 0 | 3.5 |
+| Expensive Aggregation (Top 50 Selling) | Node.js CPU + SQLite + Redis Cache | 1000 | 2785.52 | 8.44 | 14.59 | 47.05 | 0 | 17.5 |
+| Expensive Aggregation (Top 50 Selling) | Node.js CPU + SQLite + Redis Cache | 5000 | 3819.71 | 12.81 | 20.50 | 55.58 | 0 | 63.4 |
+| Search Engine Query | Elasticsearch Engine | 1 | 5.81 | 171.47 | 171.47 | 171.47 | 0 | 2.5 |
+| Search Engine Query | Elasticsearch Engine | 10 | 103.09 | 40.73 | 53.49 | 53.49 | 0 | 5.8 |
+| Search Engine Query | Elasticsearch Engine | 100 | 289.86 | 32.65 | 58.30 | 69.52 | 0 | 30.3 |
+| Search Engine Query | Elasticsearch Engine | 1000 | 399.84 | 61.39 | 110.18 | 144.71 | 0 | 91.4 |
+| Search Engine Query | Elasticsearch Engine | 5000 | 893.97 | 55.45 | 107.93 | 155.81 | 0 | 109.4 |
+| Static Asset (Edge / Varnish CDN) | Reverse Proxy / Edge | 1 | 33.33 | 28.29 | 28.29 | 28.29 | 0 | 32.0 |
+| Static Asset (Edge / Varnish CDN) | Reverse Proxy / Edge | 10 | 312.50 | 9.43 | 26.00 | 26.00 | 0 | 29.7 |
+| Static Asset (Edge / Varnish CDN) | Reverse Proxy / Edge | 100 | 1754.39 | 4.30 | 21.30 | 31.86 | 0 | 9.4 |
+| Static Asset (Edge / Varnish CDN) | Reverse Proxy / Edge | 1000 | 4424.78 | 5.23 | 8.43 | 36.14 | 0 | 3.5 |
+| Static Asset (Edge / Varnish CDN) | Reverse Proxy / Edge | 5000 | 4240.88 | 11.46 | 18.74 | 71.11 | 0 | 12.2 |

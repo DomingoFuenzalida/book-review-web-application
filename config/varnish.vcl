@@ -1,6 +1,14 @@
 vcl 4.0;
 
-backend api { .host = "api"; .port = "3000"; }
+probe api_probe {
+    .url = "/";
+    .timeout = 1s;
+    .interval = 2s;
+    .window = 3;
+    .threshold = 2;
+}
+
+backend api { .host = "api"; .port = "3000"; .probe = api_probe; }
 backend staticserver { .host = "static"; .port = "80"; }
 
 sub vcl_recv {

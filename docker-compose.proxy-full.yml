@@ -1,8 +1,19 @@
 version: '3.8'
 
 services:
+  api-init:
+    build: .
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=development
+    command: node sync-db.js
+
   api:
     build: .
+    command: node index.js
     volumes:
       - .:/app
       - /app/node_modules
@@ -17,8 +28,19 @@ services:
       - USE_SEARCH=true
       - ELASTICSEARCH_URL=http://elasticsearch:9200
     depends_on:
-      - redis
-      - elasticsearch
+      api-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+      elasticsearch:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
 
   redis:
     image: "redis:alpine"

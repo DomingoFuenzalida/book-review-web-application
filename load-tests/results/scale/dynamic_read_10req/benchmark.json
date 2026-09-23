@@ -10,16 +10,16 @@
   "actualDurationSeconds": 0.038,
   "throughputRps": 263.15789473684214,
   "latencies": {
-    "minMs": 2.100817,
-    "meanMs": 11.2186169,
-    "p50Ms": 13.226289,
-    "p95Ms": 34.292832,
-    "p99Ms": 34.292832,
-    "maxMs": 34.292832
+    "minMs": 3.618697,
+    "meanMs": 13.613825599999998,
+    "p50Ms": 16.784344,
+    "p95Ms": 31.847173,
+    "p99Ms": 31.847173,
+    "maxMs": 31.847173
   },
   "statusCodes": {
     "200": 10
   },
   "errorCount": 0,
-  "timestamp": "2026-09-23T00:56:07.213Z"
+  "timestamp": "2026-09-23T02:06:32.147Z"
 }

@@ -7,19 +7,19 @@
   "completedRequests": 5000,
   "concurrency": 50,
   "durationConfiguredSeconds": 0,
-  "actualDurationSeconds": 329.937,
-  "throughputRps": 15.154408265820443,
+  "actualDurationSeconds": 5.259,
+  "throughputRps": 950.7510933637573,
   "latencies": {
-    "minMs": 910.929617,
-    "meanMs": 3077.2425671514006,
-    "p50Ms": 3071.94417,
-    "p95Ms": 3503.87072,
-    "p99Ms": 3505.590018,
-    "maxMs": 3558.632504
+    "minMs": 19.736149,
+    "meanMs": 52.24506883060011,
+    "p50Ms": 51.641807,
+    "p95Ms": 63.00456,
+    "p99Ms": 72.38345,
+    "maxMs": 136.709046
   },
   "statusCodes": {
-    "503": 5000
+    "200": 5000
   },
   "errorCount": 0,
-  "timestamp": "2026-09-23T00:43:07.699Z"
+  "timestamp": "2026-09-23T02:02:12.629Z"
 }
