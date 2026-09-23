@@ -33,9 +33,10 @@ export const AuthorViews = {
       <div id="form-create-author" class="hidden mb-8 bg-slate-50 border border-slate-200 p-4 rounded-md shadow-sm">
         <h3 class="text-lg font-medium text-slate-900 mb-4">Create New Author</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <input type="text" id="create-author-name" placeholder="Name" class="border border-slate-300 rounded p-2 text-sm focus:outline-none focus:border-slate-500">
-          <input type="date" id="create-author-dob" class="border border-slate-300 rounded p-2 text-sm focus:outline-none focus:border-slate-500 text-slate-600">
-          <input type="text" id="create-author-country" placeholder="Country" class="border border-slate-300 rounded p-2 text-sm focus:outline-none focus:border-slate-500">
+          <div><label class="text-xs text-slate-500 block mb-1">Name</label><input type="text" id="create-author-name" placeholder="Name" class="w-full border border-slate-300 rounded p-2 text-sm focus:outline-none focus:border-slate-500"></div>
+          <div><label class="text-xs text-slate-500 block mb-1">Birth Date</label><input type="date" id="create-author-dob" class="w-full border border-slate-300 rounded p-2 text-sm focus:outline-none focus:border-slate-500 text-slate-600"></div>
+          <div><label class="text-xs text-slate-500 block mb-1">Country</label><input type="text" id="create-author-country" placeholder="Country" class="w-full border border-slate-300 rounded p-2 text-sm focus:outline-none focus:border-slate-500"></div>
+          <div><label class="text-xs text-slate-500 block mb-1">Profile Image</label><input type="file" id="create-author-image" accept="image/*" class="w-full border border-slate-300 rounded p-1 text-sm focus:outline-none focus:border-slate-500 bg-white"></div>
         </div>
         <textarea id="create-author-desc" placeholder="Description / Biography" rows="3" class="w-full border border-slate-300 rounded p-2 text-sm mb-4 focus:outline-none focus:border-slate-500"></textarea>
         <div class="flex gap-2 justify-end">
@@ -68,15 +69,21 @@ export const AuthorViews = {
       };
 
       document.getElementById('btn-save-create').onclick = async () => {
-        const payload = {
-          name: document.getElementById('create-author-name').value,
-          birth_date: document.getElementById('create-author-dob').value,
-          country: document.getElementById('create-author-country').value,
-          description: document.getElementById('create-author-desc').value
-        };
-        if (!payload.name) return alert('Name is required');
+        const name = document.getElementById('create-author-name').value;
+        if (!name) return alert('Name is required');
+
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('birth_date', document.getElementById('create-author-dob').value);
+        formData.append('country', document.getElementById('create-author-country').value);
+        formData.append('description', document.getElementById('create-author-desc').value);
+
+        const fileInput = document.getElementById('create-author-image');
+        if (fileInput && fileInput.files.length > 0) {
+          formData.append('image', fileInput.files[0]);
+        }
         
-        const res = await API.request('/authors', 'POST', payload);
+        const res = await API.request('/authors', 'POST', formData, true);
         if (res) this.renderList(container); 
         else alert('Error creating author');
       };

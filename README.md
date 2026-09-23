@@ -182,12 +182,15 @@ Once deployed, the application will be available securely at **`https://localhos
 
 ## Option 2: Deploy to Kubernetes (Minikube)
 
-The Kubernetes setup utilizes standard manifests located in `k8s/`:
-- `configmap.yaml`: Application environment variables.
+The Kubernetes setup in `k8s/` implements the full horizontally scaled production architecture with Edge Proxy:
+- `configmap.yaml`: Application environment variables (`USE_PROXY=true`, `STORAGE_PATH`, etc.).
 - `secret.yaml`: Secure default credentials.
-- `pvc.yaml`: PersistentVolumeClaim ensuring SQLite data survives Pod restarts.
-- `deployment.yaml`: Application container configuration mounting the PVC.
-- `service.yaml`: NodePort service exposing the application.
+- `pvc.yaml`: PersistentVolumeClaims for SQLite database (`book-app-data-pvc`) and shared uploaded images (`book-app-uploads-pvc`).
+- `deployment.yaml`: Horizontally scaled Node.js application (3 replicas) mounting both shared PVCs.
+- `service.yaml`: Internal ClusterIP service balancing requests across the 3 replicas.
+- `edge-proxy.yaml`: Edge tier containing Varnish (caching reverse proxy & load balancer), Hitch (TLS termination on port 443), and Nginx (static asset origin), exposed via NodePort `30443` (HTTPS) and `30080` (HTTP).
+- `redis.yaml`: Redis cache deployment and service.
+- `elasticsearch.yaml`: Elasticsearch search engine deployment and service.
 
 ### Step-by-Step Deployment
 
@@ -209,26 +212,32 @@ The Kubernetes setup utilizes standard manifests located in `k8s/`:
 
 4. **Wait for Pod Readiness:**
    ```bash
-   kubectl wait --for=condition=ready pod -l app=book-app --timeout=90s
+   kubectl wait --for=condition=ready pod -l app=book-app --timeout=120s
+   kubectl wait --for=condition=ready pod -l app=edge-proxy --timeout=90s
    ```
 
-5. **Expose and Access the Application:**
-   Run the port forward command in a dedicated terminal window:
+5. **Access the Application via Edge Proxy (HTTPS):**
+   Expose the edge proxy service via port forward or NodePort:
    ```bash
-   kubectl port-forward svc/book-app-service 3000:3000
+   kubectl port-forward svc/edge-proxy-service 8443:443 8080:80
    ```
-   Open your browser at <http://localhost:3000>.
-
-   *(Alternative: Run `minikube service book-app-service` to open a direct tunnel)*.
+   Open **`https://localhost:8443`** (or `https://app.localhost:8443`) in your web browser.
 
 ---
 
-### Verifying Kubernetes Requirements
+## Option 3: Load Testing Suite (Assignment 4)
 
-#### 1. Service Reachability
-Test that the API responds through the exposed service:
+To benchmark the single-instance vs. horizontally scaled (x3) architectures across the 5 request tiers (1, 10, 100, 1000, 5000 requests in 5 minutes) as required by Slides 15 & 16:
+
+See detailed instructions in [`load-tests/README.md`](load-tests/README.md).
+
+### Quick Execution
 ```bash
-curl http://localhost:3000/
+# 1. Run benchmarks on the currently active deployment (e.g. scale)
+./load-tests/run-all.sh --arch scale
+
+# 2. View generated summary and per-container resource stats
+cat load-tests/results/scale/SUMMARY.md
 ```
 
 #### 2. Pod Self-Healing (Auto-Recreation)

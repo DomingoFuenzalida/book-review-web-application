@@ -1,0 +1,25 @@
+{
+  "endpointKey": "aggregation",
+  "endpointName": "Expensive Aggregation (Top 50 Selling)",
+  "targetTier": "Node.js CPU + SQLite + Redis Cache",
+  "targetUrl": "https://localhost/api/reports/top-50-selling",
+  "totalRequests": 1,
+  "completedRequests": 1,
+  "concurrency": 1,
+  "durationConfiguredSeconds": 0,
+  "actualDurationSeconds": 3.09,
+  "throughputRps": 0.3236245954692557,
+  "latencies": {
+    "minMs": 3089.528685,
+    "meanMs": 3089.528685,
+    "p50Ms": 3089.528685,
+    "p95Ms": 3089.528685,
+    "p99Ms": 3089.528685,
+    "maxMs": 3089.528685
+  },
+  "statusCodes": {
+    "503": 1
+  },
+  "errorCount": 0,
+  "timestamp": "2026-09-23T00:17:22.738Z"
+}

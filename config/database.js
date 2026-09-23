@@ -14,10 +14,12 @@ const sequelize = new Sequelize({
   }
 });
 
-// Hook to ensure foreign keys are active on every SQLite connection
+// Hook to ensure foreign keys, WAL mode, and busy timeout are active on every SQLite connection
 sequelize.addHook('afterConnect', (connection, config) => {
   if (config.dialect === 'sqlite') {
     connection.run('PRAGMA foreign_keys = ON;');
+    connection.run('PRAGMA journal_mode = WAL;');
+    connection.run('PRAGMA busy_timeout = 5000;');
   }
 });
 

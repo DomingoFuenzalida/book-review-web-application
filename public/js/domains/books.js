@@ -43,9 +43,15 @@ export const BookViews = {
           <input type="text" id="create-book-name" placeholder="Book Title" class="sm:col-span-2 border border-slate-300 rounded p-2 text-sm focus:outline-none focus:border-slate-500">
           <input type="number" id="create-book-author-id" placeholder="Author ID" class="border border-slate-300 rounded p-2 text-sm focus:outline-none focus:border-slate-500">
         </div>
-        <div class="mb-4">
-          <label class="text-xs text-slate-500 mb-1 block">Publish Date</label>
-          <input type="date" id="create-book-date" class="border border-slate-300 rounded p-2 text-sm text-slate-600 focus:outline-none focus:border-slate-500">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="text-xs text-slate-500 mb-1 block">Publish Date</label>
+            <input type="date" id="create-book-date" class="w-full border border-slate-300 rounded p-2 text-sm text-slate-600 focus:outline-none focus:border-slate-500">
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 mb-1 block">Cover Image</label>
+            <input type="file" id="create-book-cover" accept="image/*" class="w-full border border-slate-300 rounded p-1 text-sm focus:outline-none focus:border-slate-500 bg-white">
+          </div>
         </div>
         <textarea id="create-book-summary" placeholder="Book Summary" rows="3" class="w-full border border-slate-300 rounded p-2 text-sm mb-4 focus:outline-none focus:border-slate-500"></textarea>
         <div class="flex gap-2 justify-end">
@@ -81,15 +87,22 @@ export const BookViews = {
       };
 
       document.getElementById('btn-save-create-book').onclick = async () => {
-        const payload = {
-          name: document.getElementById('create-book-name').value,
-          author_id: parseInt(document.getElementById('create-book-author-id').value),
-          date_of_publish: document.getElementById('create-book-date').value,
-          summary: document.getElementById('create-book-summary').value
-        };
-        if (!payload.name || isNaN(payload.author_id)) return alert('Title and Author ID are required');
+        const name = document.getElementById('create-book-name').value;
+        const authorId = parseInt(document.getElementById('create-book-author-id').value);
+        if (!name || isNaN(authorId)) return alert('Title and Author ID are required');
+
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('author_id', authorId);
+        formData.append('date_of_publish', document.getElementById('create-book-date').value);
+        formData.append('summary', document.getElementById('create-book-summary').value);
+
+        const fileInput = document.getElementById('create-book-cover');
+        if (fileInput && fileInput.files.length > 0) {
+          formData.append('cover_image', fileInput.files[0]);
+        }
         
-        const res = await API.request('/books', 'POST', payload);
+        const res = await API.request('/books', 'POST', formData, true);
         if (res) this.renderList(container); 
         else alert('Error creating book. Check if the Author ID exists.');
       };

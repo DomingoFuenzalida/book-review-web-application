@@ -1,0 +1,27 @@
+{
+  "static": {
+    "name": "Static Asset (Edge / Varnish CDN)",
+    "tier": "Reverse Proxy / Edge",
+    "path": "/uploads/sample-cover.jpg",
+    "method": "GET"
+  },
+  "aggregation": {
+    "name": "Expensive Aggregation (Top 50 Selling)",
+    "tier": "Node.js CPU + SQLite + Redis Cache",
+    "path": "/api/reports/top-50-selling",
+    "method": "GET"
+  },
+  "search": {
+    "name": "Search Engine Query",
+    "tier": "Elasticsearch Engine",
+    "path": "/api/books/search?q=the",
+    "method": "GET"
+  },
+  "dynamic_read": {
+    "name": "Cheap Dynamic Read (Single Book Detail)",
+    "tier": "Baseline App + Database",
+    "path": "/api/books/1",
+    "method": "GET"
+  }
+}
+

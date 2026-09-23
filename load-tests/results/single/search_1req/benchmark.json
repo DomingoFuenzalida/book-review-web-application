@@ -1,0 +1,25 @@
+{
+  "endpointKey": "search",
+  "endpointName": "Search Engine Query",
+  "targetTier": "Elasticsearch Engine",
+  "targetUrl": "https://localhost/api/books/search?q=the",
+  "totalRequests": 1,
+  "completedRequests": 1,
+  "concurrency": 1,
+  "durationConfiguredSeconds": 0,
+  "actualDurationSeconds": 3.08,
+  "throughputRps": 0.3246753246753247,
+  "latencies": {
+    "minMs": 3079.79712,
+    "meanMs": 3079.79712,
+    "p50Ms": 3079.79712,
+    "p95Ms": 3079.79712,
+    "p99Ms": 3079.79712,
+    "maxMs": 3079.79712
+  },
+  "statusCodes": {
+    "503": 1
+  },
+  "errorCount": 0,
+  "timestamp": "2026-09-23T00:25:54.199Z"
+}

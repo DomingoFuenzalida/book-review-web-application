@@ -1,0 +1,25 @@
+{
+  "endpointKey": "dynamic_read",
+  "endpointName": "Cheap Dynamic Read (Single Book Detail)",
+  "targetTier": "Baseline App + Database",
+  "targetUrl": "https://localhost/api/books/1",
+  "totalRequests": 1,
+  "completedRequests": 1,
+  "concurrency": 1,
+  "durationConfiguredSeconds": 0,
+  "actualDurationSeconds": 3.102,
+  "throughputRps": 0.3223726627981947,
+  "latencies": {
+    "minMs": 3100.602201,
+    "meanMs": 3100.602201,
+    "p50Ms": 3100.602201,
+    "p95Ms": 3100.602201,
+    "p99Ms": 3100.602201,
+    "maxMs": 3100.602201
+  },
+  "statusCodes": {
+    "503": 1
+  },
+  "errorCount": 0,
+  "timestamp": "2026-09-23T00:34:33.547Z"
+}

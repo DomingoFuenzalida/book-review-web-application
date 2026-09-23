@@ -1,0 +1,25 @@
+{
+  "endpointKey": "static",
+  "endpointName": "Static Asset (Edge / Varnish CDN)",
+  "targetTier": "Reverse Proxy / Edge",
+  "targetUrl": "https://localhost/uploads/sample-cover.jpg",
+  "totalRequests": 10,
+  "completedRequests": 10,
+  "concurrency": 5,
+  "durationConfiguredSeconds": 0,
+  "actualDurationSeconds": 0.037,
+  "throughputRps": 270.27027027027026,
+  "latencies": {
+    "minMs": 1.160865,
+    "meanMs": 8.8212345,
+    "p50Ms": 10.76033,
+    "p95Ms": 33.238226,
+    "p99Ms": 33.238226,
+    "maxMs": 33.238226
+  },
+  "statusCodes": {
+    "200": 10
+  },
+  "errorCount": 0,
+  "timestamp": "2026-09-23T00:55:10.293Z"
+}

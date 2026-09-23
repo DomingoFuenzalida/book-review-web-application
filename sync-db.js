@@ -7,6 +7,22 @@ async function init() {
     await sequelize.authenticate();
     await sequelize.sync();
     
+    // Check if table schemas match the current models
+    let needsForceSync = false;
+    try {
+      await sequelize.sync();
+      await User.findOne();
+      await Author.findOne();
+      await Book.findOne();
+    } catch (schemaErr) {
+      console.warn("Detected outdated or incompatible database schema. Recreating tables...", schemaErr.message);
+      needsForceSync = true;
+    }
+
+    if (needsForceSync) {
+      await sequelize.sync({ force: true });
+    }
+    
     const userCount = await User.count();
     const authorCount = await Author.count();
     const bookCount = await Book.count();
